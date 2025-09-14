@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +30,7 @@ import java.math.BigDecimal
 import com.example.pickeo.domain.models.CartLine
 import com.example.pickeo.domain.models.MenuItem
 import com.example.pickeo.domain.models.MenuSection
+import com.example.pickeo.ui.theme.PickeoTheme
 
 @Composable
 fun TabletMenuScreen(
@@ -42,28 +44,11 @@ fun TabletMenuScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // LEFT: Menu (scrollable grids por sección)
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp)
-        ) {
-            state.sections.forEach { section ->
-                Text(
-                    text = section.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.height(8.dp))
-
-                MenuSectionGrid(
-                    section = section,
-                    onItemClick = { viewModel.addItem(it) }
-                )
-
-                Spacer(Modifier.height(16.dp))
-            }
-        }
+        LeftMenu(
+            sections = state.sections,
+            onItemClick = { viewModel.addItem(it) },
+            modifier = Modifier.weight(1f)
+        )
 
         // RIGHT: Cart + pago
         Column(
@@ -118,6 +103,39 @@ fun TabletMenuScreen(
         }
     }
 }
+
+@Composable
+fun LeftMenu(
+    sections: List<MenuSection>,
+    onItemClick: (MenuItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        modifier = modifier.fillMaxHeight(), // no weight here
+        contentPadding = PaddingValues(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        sections.forEach { section ->
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+            items(items = section.items, key = { it.id }) { item ->
+                MenuItemCard(item) { onItemClick(item) }
+            }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun MenuSectionGrid(
@@ -252,18 +270,6 @@ private fun CartList(
 /* ---------- Previews ---------- */
 
 @Preview(
-    name = "Tablet 10\" 1280x800 - Light",
-    showBackground = true,
-    backgroundColor = 0xFFFFFFFF,
-    widthDp = 1280,
-    heightDp = 800
-)
-@Composable
-fun TabletMenuScreenPreview_Tablet_Light() {
-    TabletMenuScreen()
-}
-
-@Preview(
     name = "Tablet 10\" 1280x800 - Dark",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true,
@@ -273,5 +279,7 @@ fun TabletMenuScreenPreview_Tablet_Light() {
 )
 @Composable
 fun TabletMenuScreenPreview_Tablet_Dark() {
-    TabletMenuScreen()
+    PickeoTheme {
+        TabletMenuScreen()
+    }
 }
