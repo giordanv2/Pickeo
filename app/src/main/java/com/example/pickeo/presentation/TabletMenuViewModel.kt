@@ -64,6 +64,30 @@ class TabletMenuViewModel : ViewModel() {
         _uiState.update { it.copy(cart = emptyList()) }
     }
 
+    fun updateQuantity(item: MenuItem, newQty: Int) {
+        _uiState.update { state ->
+            when {
+                // Si pones 0 o menos, quita la línea
+                newQty <= 0 -> state.copy(
+                    cart = state.cart.filterNot { it.item.id == item.id }
+                )
+
+                // Si ya existe en el carrito, actualiza su cantidad
+                state.cart.any { it.item.id == item.id } -> state.copy(
+                    cart = state.cart.map {
+                        if (it.item.id == item.id) it.copy(quantity = newQty) else it
+                    }
+                )
+
+                // Si no existiera (caso raro), agrégalo con esa cantidad
+                else -> state.copy(
+                    cart = state.cart + CartLine(item, newQty)
+                )
+            }
+        }
+    }
+
+
     fun updateAmountReceived(text: String) {
         // Permitimos solo números y punto decimal básico
         val sanitized = text.replace(",", ".")
