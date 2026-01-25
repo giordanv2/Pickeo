@@ -209,42 +209,6 @@ fun TabletMenuContent(
     }
 }
 
-@Preview(
-    name = "Compact",
-    widthDp = 411,
-    heightDp = 891,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun PreviewCompact() {
-    PickeoTheme {
-        TabletMenuContent(
-            state = previewState(),
-            onAddItem = {},
-            onRemoveLine = {},
-            onUpdateQty = { _, _ -> }
-        )
-    }
-}
-
-@Preview(
-    name = "Medium",
-    widthDp = 600,
-    heightDp = 891,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun PreviewMedium() {
-    PickeoTheme {
-        TabletMenuContent(
-            state = previewState(),
-            onAddItem = {},
-            onRemoveLine = {},
-            onUpdateQty = { _, _ -> }
-        )
-    }
-}
-
 private fun previewState() = TabletMenuUiState(
     sections = listOf(
         MenuSection(
@@ -467,7 +431,43 @@ private fun CartList(
 /* ---------- Previews ---------- */
 
 @Preview(
-    name = "Tablet 10\" 1280x800 - Dark",
+    name = "Compact",
+    widthDp = 411,
+    heightDp = 891,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewCompact() {
+    PickeoTheme {
+        TabletMenuContent(
+            state = previewState(),
+            onAddItem = {},
+            onRemoveLine = {},
+            onUpdateQty = { _, _ -> }
+        )
+    }
+}
+
+@Preview(
+    name = "Medium",
+    widthDp = 600,
+    heightDp = 891,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewMedium() {
+    PickeoTheme {
+        TabletMenuContent(
+            state = previewState(),
+            onAddItem = {},
+            onRemoveLine = {},
+            onUpdateQty = { _, _ -> }
+        )
+    }
+}
+
+@Preview(
+    name = "Expanded",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true,
     backgroundColor = 0xFF000000,
@@ -475,7 +475,7 @@ private fun CartList(
     heightDp = 800
 )
 @Composable
-fun TabletMenuScreenPreview_Tablet_Dark() {
+fun PreviewExpanded() {
     PickeoTheme {
         TabletMenuScreen()
     }
