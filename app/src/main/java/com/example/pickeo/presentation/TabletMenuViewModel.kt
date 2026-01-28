@@ -87,16 +87,6 @@ class TabletMenuViewModel : ViewModel() {
         }
     }
 
-
-    fun updateAmountReceived(text: String) {
-        // Permitimos solo números y punto decimal básico
-        val sanitized = text.replace(",", ".")
-        _uiState.update { it.copy(amountReceived = sanitized) }
-    }
-
-    private fun String.toBigDecimalOrNull(): BigDecimal? =
-        try { BigDecimal(this) } catch (_: Exception) { null }
-
     companion object {
         private fun demoSections(): List<MenuSection> {
             fun d(price: Double) = BigDecimal(price).setScale(2, RoundingMode.HALF_UP)

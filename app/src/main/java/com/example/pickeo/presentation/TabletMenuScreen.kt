@@ -84,7 +84,7 @@ fun TabletMenuScreen(
                     line = editingLine!!,
                     onDismiss = { editingLine = null },
                     onUpdate = { newQty ->
-                        viewModel.updateQuantity(editingLine!!.item, newQty) // asegúrate de tener este métod
+                        viewModel.updateQuantity(editingLine!!.item, newQty)
                         editingLine = null
                     }
                 )
@@ -109,7 +109,7 @@ fun TabletMenuScreen(
             Button(
                 onClick = { },
                 modifier = Modifier
-                    .width(150.dp) // ajusta el número a tu gusto
+                    .width(150.dp)
                     .height(60.dp)
                     .align(Alignment.End),
                 shape = RoundedCornerShape(6.dp)
@@ -119,120 +119,23 @@ fun TabletMenuScreen(
                     fontSize = 20.sp)
             }
 
-            Spacer(Modifier.height(8.dp))
-
-//            Text(
-//                "Change: $${state.change}",
-//                style = MaterialTheme.typography.titleMedium,
-//                modifier = Modifier.align(Alignment.End),
-//                color = MaterialTheme.colorScheme.onBackground
-//            )
-        }
-    }
-}
-
-@Composable
-fun TabletMenuContent(
-    state: TabletMenuUiState,
-    onAddItem: (MenuItem) -> Unit,
-    onRemoveLine: (CartLine) -> Unit,
-    onUpdateQty: (MenuItem, Int) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize()
-            .padding(top = 16.dp, start = 16.dp, end = 16.dp)
-    ) {
-        LeftMenu(
-            sections = state.sections,
-            onItemClick = onAddItem,
-            modifier = Modifier.weight(1f)
-        )
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp)
-        ) {
-            Text(
-                text = "Selected Items",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            var editingLine by remember { mutableStateOf<CartLine?>(null) }
-
-            CartList(
-                lines = state.cart,
-                onDismiss = onRemoveLine,
-                onQuantityClick = { editingLine = it }
-            )
-
-            if (editingLine != null) {
-                QuantityDialog(
-                    line = editingLine!!,
-                    onDismiss = { editingLine = null },
-                    onUpdate = { qty ->
-                        onUpdateQty(editingLine!!.item, qty)
-                        editingLine = null
-                    }
-                )
-            }
-
-            Spacer(Modifier.weight(1f))
-            HorizontalDivider()
-
-            Text(
-                "Total: $${state.total}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 8.dp, end = 8.dp),
-                fontSize = 20.sp
-            )
-
-            Spacer(Modifier.height(16.dp))
-
             Button(
-                onClick = { /* later */ },
+                onClick = { viewModel.clearCart() },
                 modifier = Modifier
                     .width(150.dp)
                     .height(60.dp)
-                    .align(Alignment.End)
+                    .align(Alignment.End),
+                shape = RoundedCornerShape(6.dp)
             ) {
-                Text("Pay Now", fontSize = 20.sp)
+                Text(
+                    text = "Clear",
+                    fontSize = 20.sp)
             }
+
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
-
-private fun previewState() = TabletMenuUiState(
-    sections = listOf(
-        MenuSection(
-            title = "Drinks",
-            items = listOf(
-                MenuItem(id = "1", name = "Coke", price = BigDecimal("2.50")),
-                MenuItem(id = "2", name = "Sprite", price = BigDecimal("2.50")),
-                MenuItem(id = "3", name = "Water", price = BigDecimal("1.50")),
-            )
-        ),
-        MenuSection(
-            title = "Food",
-            items = listOf(
-                MenuItem(id = "4", name = "Burger", price = BigDecimal("8.99")),
-                MenuItem(id = "5", name = "Fries", price = BigDecimal("3.99")),
-            )
-        )
-    ),
-    cart = listOf(
-        CartLine(MenuItem("1", "Coke", BigDecimal("2.50")), 2),
-        CartLine(MenuItem("4", "Burger", BigDecimal("8.99")), 1),
-    ),
-)
-
 
 @Composable
 fun QuantityDialog(
@@ -423,46 +326,6 @@ private fun CartList(
                 )
             }
         }
-    }
-}
-
-
-
-/* ---------- Previews ---------- */
-
-@Preview(
-    name = "Compact",
-    widthDp = 411,
-    heightDp = 891,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun PreviewCompact() {
-    PickeoTheme {
-        TabletMenuContent(
-            state = previewState(),
-            onAddItem = {},
-            onRemoveLine = {},
-            onUpdateQty = { _, _ -> }
-        )
-    }
-}
-
-@Preview(
-    name = "Medium",
-    widthDp = 600,
-    heightDp = 891,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun PreviewMedium() {
-    PickeoTheme {
-        TabletMenuContent(
-            state = previewState(),
-            onAddItem = {},
-            onRemoveLine = {},
-            onUpdateQty = { _, _ -> }
-        )
     }
 }
 
