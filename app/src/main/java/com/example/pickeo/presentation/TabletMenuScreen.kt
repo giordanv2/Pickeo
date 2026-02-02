@@ -203,29 +203,32 @@ fun TabletMenuScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                Button(
-                    onClick = { },
-                    modifier = Modifier
-                        .width(150.dp)
-                        .height(60.dp)
-                        .align(Alignment.End),
-                    shape = RoundedCornerShape(6.dp)
+                Row(
+                    modifier = Modifier.align(Alignment.End),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(text = "Pay Now", fontSize = 20.sp)
+
+                    Button(
+                        onClick = { viewModel.clearCart() },
+                        modifier = Modifier
+                            .width(150.dp)
+                            .height(60.dp),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(text = "Clear", fontSize = 20.sp)
+                    }
+
+                    Button(
+                        onClick = { },
+                        modifier = Modifier
+                            .width(150.dp)
+                            .height(60.dp),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(text = "Pay Now", fontSize = 20.sp)
+                    }
                 }
 
-                Spacer(Modifier.height(12.dp))
-
-                Button(
-                    onClick = { viewModel.clearCart() },
-                    modifier = Modifier
-                        .width(150.dp)
-                        .height(60.dp)
-                        .align(Alignment.End),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(text = "Clear", fontSize = 20.sp)
-                }
 
                 Spacer(Modifier.height(8.dp))
             }
