@@ -9,6 +9,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+sealed interface CatalogUiEvent {
+    data class SearchChanged(val query: String) : CatalogUiEvent
+    data class SectionSelected(val sectionId: String?) : CatalogUiEvent
+    data class AddToCartClicked(val item: CatalogItem) : CatalogUiEvent
+    data object RetryClicked : CatalogUiEvent
+}
+
+data class CatalogUiState(
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val catalog: Catalog? = null,
+    val selectedSectionId: String? = null,
+    val searchQuery: String = "",
+    val visibleItems: List<CatalogItem> = emptyList(),
+) {
+    val sections: List<CatalogSection>
+        get() = catalog?.sections.orEmpty()
+}
+
 class CatalogViewModel(
     private val initialCatalog: Catalog = CatalogFixtures.sampleCatalog()
 ) : ViewModel() {
@@ -24,7 +43,7 @@ class CatalogViewModel(
         when (event) {
             is CatalogUiEvent.SearchChanged -> onSearchChanged(event.query)
             is CatalogUiEvent.SectionSelected -> onSectionSelected(event.sectionId)
-            is CatalogUiEvent.AddToCartClicked -> onAddToCart(event.item)
+            is CatalogUiEvent.AddToCartClicked -> Unit
             CatalogUiEvent.RetryClicked -> loadCatalog()
         }
     }
@@ -65,13 +84,6 @@ class CatalogViewModel(
                     query = state.searchQuery.trim()
                 )
             )
-        }
-    }
-
-    private fun onAddToCart(item: CatalogItem) {
-        if (!item.isAvailable) return
-        _uiState.update { state ->
-            state.copy(cartItemCount = state.cartItemCount + 1)
         }
     }
 

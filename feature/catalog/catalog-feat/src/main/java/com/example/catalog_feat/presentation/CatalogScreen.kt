@@ -46,11 +46,15 @@ import java.math.RoundingMode
 @Composable
 fun CatalogRoute(
     viewModel: CatalogViewModel = viewModel(),
-    onItemAdded: (CatalogItem) -> Unit = {}
+    cartItemCount: Int = 0,
+    onItemAdded: (CatalogItem) -> Unit = {},
+    onViewCartClicked: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     CatalogScreen(
         state = state,
+        cartItemCount = cartItemCount,
+        onViewCartClicked = onViewCartClicked,
         onEvent = { event ->
             viewModel.onEvent(event)
             if (event is CatalogUiEvent.AddToCartClicked && event.item.isAvailable) {
@@ -64,6 +68,8 @@ fun CatalogRoute(
 @Composable
 fun CatalogScreen(
     state: CatalogUiState,
+    cartItemCount: Int,
+    onViewCartClicked: () -> Unit,
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -85,8 +91,8 @@ fun CatalogScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Items in cart: ${state.cartItemCount}")
-                OutlinedButton(onClick = {}) {
+                Text(text = "Items in cart: $cartItemCount")
+                OutlinedButton(onClick = onViewCartClicked) {
                     Text("View Cart")
                 }
             }
@@ -266,6 +272,8 @@ private fun CatalogScreenPreview() {
                 selectedSectionId = null,
                 visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
             ),
+            cartItemCount = 3,
+            onViewCartClicked = {},
             onEvent = {}
         )
     }
@@ -289,6 +297,8 @@ private fun CatalogScreenPreview2() {
                 selectedSectionId = null,
                 visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
             ),
+            cartItemCount = 3,
+            onViewCartClicked = {},
             onEvent = {}
         )
     }
