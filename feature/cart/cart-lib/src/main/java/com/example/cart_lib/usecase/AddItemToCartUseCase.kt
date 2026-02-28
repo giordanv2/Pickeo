@@ -2,11 +2,12 @@ package com.example.cart_lib.usecase
 
 import com.example.cart_lib.repository.CartRepository
 import java.math.BigDecimal
+import javax.inject.Inject
 
-class AddItemToCartUseCase(
+class AddItemToCartUseCase @Inject constructor(
     private val repository: CartRepository
 ) {
-    operator fun invoke(
+    suspend operator fun invoke(
         productId: String,
         name: String,
         unitPrice: BigDecimal,
