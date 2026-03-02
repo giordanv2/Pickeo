@@ -3,7 +3,7 @@ package com.example.database.di
 import android.content.Context
 import androidx.room.Room
 import com.example.database.dao.CartItemDao
-import com.example.database.source.CartDataSource
+import com.example.database.source.CartDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,15 +17,14 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideCartDataSource(
+    fun provideCartDatabase(
         @ApplicationContext context: Context
-    ): CartDataSource = Room.databaseBuilder(
+    ): CartDatabase = Room.databaseBuilder(
         context = context,
-        klass = CartDataSource::class.java,
+        klass = CartDatabase::class.java,
         name = "cart_data_source.db"
     ).build()
 
     @Provides
-    fun provideCartItemDao(dataSource: CartDataSource): CartItemDao = dataSource.cartItemDao()
+    fun provideCartItemDao(database: CartDatabase): CartItemDao = database.cartItemDao()
 }
-

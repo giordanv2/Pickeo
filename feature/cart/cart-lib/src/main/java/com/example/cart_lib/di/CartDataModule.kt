@@ -1,7 +1,7 @@
 package com.example.cart_lib.di
 
 import com.example.cart_lib.repository.CartRepository
-import com.example.cart_lib.repository.CartRoomRepository
+import com.example.cart_lib.repository.CartRoomDataSource
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,6 +15,6 @@ abstract class CartDataModule {
     @Binds
     @Singleton
     abstract fun bindCartRepository(
-        repository: CartRoomRepository
+        repository: CartRoomDataSource
     ): CartRepository
 }

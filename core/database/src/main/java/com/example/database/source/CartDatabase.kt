@@ -10,6 +10,6 @@ import com.example.database.model.CartItemEntity
     version = 1,
     exportSchema = false
 )
-abstract class CartDataSource : RoomDatabase() {
+abstract class CartDatabase : RoomDatabase() {
     abstract fun cartItemDao(): CartItemDao
 }

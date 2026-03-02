@@ -11,7 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CartRoomRepository @Inject constructor(
+class CartRoomDataSource @Inject constructor(
     private val cartItemDao: CartItemDao
 ) : CartRepository {
 
