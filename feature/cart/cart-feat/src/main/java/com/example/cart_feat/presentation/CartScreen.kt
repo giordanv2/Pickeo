@@ -34,11 +34,13 @@ import java.math.RoundingMode
 
 @Composable
 fun CartRoute(
+    showTopBar: Boolean = true,
     viewModel: CartViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CartScreen(
         state = state,
+        showTopBar = showTopBar,
         onEvent = viewModel::onEvent
     )
 }
@@ -47,13 +49,16 @@ fun CartRoute(
 @Composable
 fun CartScreen(
     state: CartUiState,
+    showTopBar: Boolean,
     onEvent: (CartUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Cart") })
+            if (showTopBar) {
+                TopAppBar(title = { Text("Cart") })
+            }
         }
     ) { padding ->
         if (state.isLoading) {
@@ -205,6 +210,7 @@ private fun CartScreenPreview() {
                     )
                 )
             ),
+            showTopBar = true,
             onEvent = {}
         )
     }

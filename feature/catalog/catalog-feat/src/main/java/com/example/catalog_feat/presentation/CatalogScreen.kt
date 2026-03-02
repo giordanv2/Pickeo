@@ -47,6 +47,8 @@ import java.math.RoundingMode
 fun CatalogRoute(
     viewModel: CatalogViewModel = viewModel(),
     cartItemCount: Int = 0,
+    showTopBar: Boolean = true,
+    showBottomBar: Boolean = true,
     onItemAdded: (CatalogItem) -> Unit = {},
     onViewCartClicked: () -> Unit = {}
 ) {
@@ -54,6 +56,8 @@ fun CatalogRoute(
     CatalogScreen(
         state = state,
         cartItemCount = cartItemCount,
+        showTopBar = showTopBar,
+        showBottomBar = showBottomBar,
         onViewCartClicked = onViewCartClicked,
         onEvent = { event ->
             viewModel.onEvent(event)
@@ -69,6 +73,8 @@ fun CatalogRoute(
 fun CatalogScreen(
     state: CatalogUiState,
     cartItemCount: Int,
+    showTopBar: Boolean,
+    showBottomBar: Boolean,
     onViewCartClicked: () -> Unit,
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
@@ -76,24 +82,28 @@ fun CatalogScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = state.catalog?.name ?: "Catalog")
-                }
-            )
+            if (showTopBar) {
+                TopAppBar(
+                    title = {
+                        Text(text = state.catalog?.name ?: "Catalog")
+                    }
+                )
+            }
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "Items in cart: $cartItemCount")
-                OutlinedButton(onClick = onViewCartClicked) {
-                    Text("View Cart")
+            if (showBottomBar) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Items in cart: $cartItemCount")
+                    OutlinedButton(onClick = onViewCartClicked) {
+                        Text("View Cart")
+                    }
                 }
             }
         }
@@ -273,6 +283,8 @@ private fun CatalogScreenPreview() {
                 visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
             ),
             cartItemCount = 3,
+            showTopBar = true,
+            showBottomBar = true,
             onViewCartClicked = {},
             onEvent = {}
         )
@@ -298,6 +310,8 @@ private fun CatalogScreenPreview2() {
                 visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
             ),
             cartItemCount = 3,
+            showTopBar = true,
+            showBottomBar = true,
             onViewCartClicked = {},
             onEvent = {}
         )
