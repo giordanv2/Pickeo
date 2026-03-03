@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.catalog_lib.models.CatalogItem
 import java.math.RoundingMode
@@ -52,7 +53,7 @@ fun CatalogRoute(
     onItemAdded: (CatalogItem) -> Unit = {},
     onViewCartClicked: () -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     CatalogScreen(
         state = state,
         cartItemCount = cartItemCount,

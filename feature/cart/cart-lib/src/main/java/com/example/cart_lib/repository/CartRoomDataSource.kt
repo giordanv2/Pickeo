@@ -28,16 +28,26 @@ class CartRoomDataSource @Inject constructor(
         quantity: Int
     ) {
         if (quantity <= 0) return
-        val existing = cartItemDao.findById(productId)
-        val nextQuantity = (existing?.quantity ?: 0) + quantity
-        cartItemDao.upsert(
+        val insertResult = cartItemDao.insertIgnore(
             CartItemEntity(
                 productId = productId,
                 name = name,
                 unitPrice = unitPrice.toPlainString(),
-                quantity = nextQuantity
+                quantity = quantity,
+                addedAt = System.currentTimeMillis()
             )
         )
+
+        // Existing rows are updated in place to preserve row identity and ordering.
+        if (insertResult == -1L) {
+            val existing = cartItemDao.findById(productId) ?: return
+            cartItemDao.updateItem(
+                productId = productId,
+                name = name,
+                unitPrice = unitPrice.toPlainString(),
+                quantity = existing.quantity + quantity
+            )
+        }
     }
 
     override suspend fun updateQuantity(productId: String, quantity: Int) {
@@ -45,8 +55,7 @@ class CartRoomDataSource @Inject constructor(
             removeItem(productId)
             return
         }
-        val existing = cartItemDao.findById(productId) ?: return
-        cartItemDao.upsert(existing.copy(quantity = quantity))
+        cartItemDao.updateQuantity(productId, quantity)
     }
 
     override suspend fun removeItem(productId: String) {

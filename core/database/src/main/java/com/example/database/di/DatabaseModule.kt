@@ -23,7 +23,7 @@ object DatabaseModule {
         context = context,
         klass = CartDatabase::class.java,
         name = "cart_data_source.db"
-    ).build()
+    ).fallbackToDestructiveMigration().build()
 
     @Provides
     fun provideCartItemDao(database: CartDatabase): CartItemDao = database.cartItemDao()
