@@ -16,21 +16,27 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,14 +45,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
+import com.example.catalog_lib.models.CatalogSection
 import java.math.RoundingMode
 
 @Composable
 fun CatalogRoute(
-    viewModel: CatalogViewModel = viewModel(),
+    viewModel: CatalogViewModel = hiltViewModel(),
     cartItemCount: Int = 0,
     showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
@@ -80,6 +88,12 @@ fun CatalogScreen(
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showCreateDialog by rememberSaveable { mutableStateOf(false) }
+    var nameInput by rememberSaveable { mutableStateOf("") }
+    var priceInput by rememberSaveable { mutableStateOf("") }
+    var sectionInput by rememberSaveable { mutableStateOf("") }
+    var dialogError by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -106,6 +120,14 @@ fun CatalogScreen(
                         Text("View Cart")
                     }
                 }
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                dialogError = null
+                showCreateDialog = true
+            }) {
+                Text("+")
             }
         }
     ) { padding ->
@@ -206,6 +228,76 @@ fun CatalogScreen(
             }
         }
     }
+
+    if (showCreateDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreateDialog = false },
+            title = { Text("Create Catalog Item") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Name*") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = priceInput,
+                        onValueChange = { priceInput = it },
+                        label = { Text("Price*") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = sectionInput,
+                        onValueChange = { sectionInput = it },
+                        label = { Text("Section*") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    dialogError?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val parsedPrice = priceInput.trim().toBigDecimalOrNull()
+                        if (nameInput.isBlank() || sectionInput.isBlank() || parsedPrice == null || parsedPrice <= java.math.BigDecimal.ZERO) {
+                            dialogError = "Fill all required fields with a valid price."
+                            return@TextButton
+                        }
+
+                        onEvent(
+                            CatalogUiEvent.CreateCatalogItemSubmitted(
+                                name = nameInput,
+                                price = priceInput,
+                                sectionTitle = sectionInput
+                            )
+                        )
+                        nameInput = ""
+                        priceInput = ""
+                        sectionInput = ""
+                        dialogError = null
+                        showCreateDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -267,13 +359,14 @@ private fun CatalogItemCard(
 @Preview(showBackground = true)
 @Composable
 private fun CatalogScreenPreview() {
+    val sampleCatalog = previewCatalog()
     MaterialTheme {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
-                catalog = CatalogFixtures.sampleCatalog(),
+                catalog = sampleCatalog,
                 selectedSectionId = null,
-                visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
+                visibleItems = sampleCatalog.sections.flatMap { it.items }
             ),
             cartItemCount = 3,
             showTopBar = true,
@@ -294,13 +387,14 @@ private fun CatalogScreenPreview() {
 )
 @Composable
 private fun CatalogScreenPreview2() {
+    val sampleCatalog = previewCatalog()
     MaterialTheme {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
-                catalog = CatalogFixtures.sampleCatalog(),
+                catalog = sampleCatalog,
                 selectedSectionId = null,
-                visibleItems = CatalogFixtures.sampleCatalog().sections.flatMap { it.items }
+                visibleItems = sampleCatalog.sections.flatMap { it.items }
             ),
             cartItemCount = 3,
             showTopBar = true,
@@ -309,4 +403,20 @@ private fun CatalogScreenPreview2() {
             onEvent = {}
         )
     }
+}
+
+private fun previewCatalog(): Catalog {
+    val items = listOf(
+        CatalogItem(id = "espresso", name = "Espresso", price = "2.50".toBigDecimal()),
+        CatalogItem(id = "latte", name = "Caffe Latte", price = "4.25".toBigDecimal()),
+        CatalogItem(id = "croissant", name = "Croissant", price = "3.50".toBigDecimal())
+    )
+    return Catalog(
+        id = "preview",
+        name = "Catalog",
+        sections = listOf(
+            CatalogSection(id = "coffee", title = "Coffee", items = items.take(2)),
+            CatalogSection(id = "bakery", title = "Bakery", items = items.takeLast(1))
+        )
+    )
 }

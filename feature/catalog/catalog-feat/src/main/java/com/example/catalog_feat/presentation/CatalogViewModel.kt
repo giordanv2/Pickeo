@@ -1,18 +1,30 @@
 package com.example.catalog_feat.presentation
 
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.ViewModel
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
+import com.example.catalog_lib.domain.usecase.CreateCatalogItemUseCase
+import com.example.catalog_lib.domain.usecase.ObserveCatalogUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.math.BigDecimal
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 sealed interface CatalogUiEvent {
     data class SearchChanged(val query: String) : CatalogUiEvent
     data class SectionSelected(val sectionId: String?) : CatalogUiEvent
     data class AddToCartClicked(val item: CatalogItem) : CatalogUiEvent
+    data class CreateCatalogItemSubmitted(
+        val name: String,
+        val price: String,
+        val sectionTitle: String
+    ) : CatalogUiEvent
     data object RetryClicked : CatalogUiEvent
 }
 
@@ -28,15 +40,17 @@ data class CatalogUiState(
         get() = catalog?.sections.orEmpty()
 }
 
-class CatalogViewModel(
-    private val initialCatalog: Catalog = CatalogFixtures.sampleCatalog()
+@HiltViewModel
+class CatalogViewModel @Inject constructor(
+    private val observeCatalogUseCase: ObserveCatalogUseCase,
+    private val createCatalogItemUseCase: CreateCatalogItemUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
     init {
-        loadCatalog()
+        observeCatalog()
     }
 
     fun onEvent(event: CatalogUiEvent) {
@@ -44,18 +58,48 @@ class CatalogViewModel(
             is CatalogUiEvent.SearchChanged -> onSearchChanged(event.query)
             is CatalogUiEvent.SectionSelected -> onSectionSelected(event.sectionId)
             is CatalogUiEvent.AddToCartClicked -> Unit
-            CatalogUiEvent.RetryClicked -> loadCatalog()
+            is CatalogUiEvent.CreateCatalogItemSubmitted -> createCatalogItem(event)
+            CatalogUiEvent.RetryClicked -> Unit
         }
     }
 
-    private fun loadCatalog() {
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                errorMessage = null,
-                catalog = initialCatalog,
-                selectedSectionId = null,
-                visibleItems = initialCatalog.sections.flatMap { section -> section.items }
+    private fun observeCatalog() {
+        viewModelScope.launch {
+            observeCatalogUseCase().collect { catalog ->
+                _uiState.update { state ->
+                    val safeSelectedSectionId = state.selectedSectionId
+                        ?.takeIf { sectionId -> catalog.sections.any { it.id == sectionId } }
+                    val visibleItems = buildVisibleItems(
+                        sections = catalog.sections,
+                        selectedSectionId = safeSelectedSectionId,
+                        query = state.searchQuery.trim()
+                    )
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        catalog = catalog,
+                        selectedSectionId = safeSelectedSectionId,
+                        visibleItems = visibleItems
+                    )
+                }
+            }
+        }
+    }
+
+    private fun createCatalogItem(event: CatalogUiEvent.CreateCatalogItemSubmitted) {
+        val name = event.name.trim()
+        val sectionTitle = event.sectionTitle.trim()
+        val price = event.price.trim().toBigDecimalOrNull()
+
+        if (name.isEmpty() || sectionTitle.isEmpty() || price == null || price <= BigDecimal.ZERO) {
+            return
+        }
+
+        viewModelScope.launch {
+            createCatalogItemUseCase(
+                name = name,
+                unitPrice = price,
+                sectionTitle = sectionTitle
             )
         }
     }

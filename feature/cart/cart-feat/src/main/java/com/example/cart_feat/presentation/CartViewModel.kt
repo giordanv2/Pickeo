@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
+import com.example.catalog_lib.domain.usecase.CreateCatalogItemUseCase
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
