@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,10 +18,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,11 @@ fun CartScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = if (showTopBar) {
+            ScaffoldDefaults.contentWindowInsets
+        } else {
+            WindowInsets(0, 0, 0, 0)
+        },
         topBar = {
             if (showTopBar) {
                 TopAppBar(title = { Text("Cart") })
@@ -73,35 +79,37 @@ fun CartScreen(
             return@Scaffold
         }
 
-        if (state.summary.items.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Cart is empty")
-            }
-            return@Scaffold
-        }
+        val isCartEmpty = state.summary.items.isEmpty()
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(padding)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(state.summary.items, key = { it.productId }) { item ->
-                    CartItemCard(
-                        item = item,
-                        onIncrement = { onEvent(CartUiEvent.IncrementClicked(item.productId)) },
-                        onDecrement = { onEvent(CartUiEvent.DecrementClicked(item.productId)) },
-                        onRemove = { onEvent(CartUiEvent.RemoveClicked(item.productId)) }
-                    )
+            if (isCartEmpty) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Cart is empty")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.summary.items, key = { it.productId }) { item ->
+                        CartItemCard(
+                            item = item,
+                            onIncrement = { onEvent(CartUiEvent.IncrementClicked(item.productId)) },
+                            onDecrement = { onEvent(CartUiEvent.DecrementClicked(item.productId)) },
+                            onRemove = { onEvent(CartUiEvent.RemoveClicked(item.productId)) }
+                        )
+                    }
                 }
             }
 
@@ -132,10 +140,16 @@ fun CartScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                     ) {
-                        OutlinedButton(onClick = { onEvent(CartUiEvent.ClearClicked) }) {
+                        OutlinedButton(
+                            onClick = { onEvent(CartUiEvent.ClearClicked) },
+                            enabled = !isCartEmpty
+                        ) {
                             Text("Clear")
                         }
-                        Button(onClick = {}) {
+                        Button(
+                            onClick = {},
+                            enabled = !isCartEmpty
+                        ) {
                             Text("Checkout")
                         }
                     }
