@@ -3,7 +3,9 @@ package com.example.catalog_feat.presentation
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,11 +40,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -127,21 +133,9 @@ fun CatalogScreen(
             }
         },
         floatingActionButton = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                if (isDebugBuild) {
-                    FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
-                        Text("Mock")
-                    }
-                }
-
-                FloatingActionButton(onClick = {
-                    dialogError = null
-                    showCreateDialog = true
-                }) {
-                    Text("+")
+            if (isDebugBuild) {
+                FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
+                    Text("Mock")
                 }
             }
         }
@@ -216,29 +210,25 @@ fun CatalogScreen(
                 }
             }
 
-            if (state.visibleItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No items found",
-                        style = MaterialTheme.typography.bodyLarge
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 164.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(state.visibleItems, key = { it.id }) { item ->
+                    CatalogItemCard(
+                        item = item,
+                        onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
                     )
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 164.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(state.visibleItems, key = { it.id }) { item ->
-                        CatalogItemCard(
-                            item = item,
-                            onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
-                        )
-                    }
+                item(key = "create-catalog-item-card") {
+                    CreateCatalogItemCard(
+                        onClick = {
+                            dialogError = null
+                            showCreateDialog = true
+                        }
+                    )
                 }
             }
         }
@@ -312,6 +302,58 @@ fun CatalogScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun CreateCatalogItemCard(onClick: () -> Unit) {
+    val outlineColor = MaterialTheme.colorScheme.primary
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(0.dp, Color.Transparent),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .drawBehind {
+                val strokeWidth = 2.dp.toPx()
+                val inset = strokeWidth / 2
+                drawRoundRect(
+                    color = outlineColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                    size = androidx.compose.ui.geometry.Size(
+                        width = size.width - strokeWidth,
+                        height = size.height - strokeWidth
+                    ),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx(), 12.dp.toPx()),
+                    style = Stroke(
+                        width = strokeWidth,
+                        cap = StrokeCap.Round,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 12f))
+                    )
+                )
+            }
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(168.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "+",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Create item",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
     }
 }
 
