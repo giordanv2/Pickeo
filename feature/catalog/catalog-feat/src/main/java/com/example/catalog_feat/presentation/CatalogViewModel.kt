@@ -62,7 +62,7 @@ class CatalogViewModel @Inject constructor(
             is CatalogUiEvent.SearchChanged -> onSearchChanged(event.query)
             is CatalogUiEvent.SectionSelected -> onSectionSelected(event.sectionId)
             is CatalogUiEvent.AddToCartClicked -> addItemToCart(event)
-            CatalogUiEvent.CreateMockCatalogItemClicked -> createMockCatalogItem()
+            CatalogUiEvent.CreateMockCatalogItemClicked -> Unit
             is CatalogUiEvent.CreateCatalogItemSubmitted -> createCatalogItem(event)
             CatalogUiEvent.RetryClicked -> Unit
         }
@@ -119,18 +119,18 @@ class CatalogViewModel @Inject constructor(
         }
     }
 
-    private fun createMockCatalogItem() {
-        viewModelScope.launch {
-            mockItemCounter += 1
-            val counter = mockItemCounter
-            val sectionTitle = _uiState.value.sections.firstOrNull()?.title ?: "Debug"
-            createCatalogItemUseCase(
-                name = "Mock item $counter",
-                unitPrice = "${(counter % 7) + 1}.99".toBigDecimal(),
-                sectionTitle = sectionTitle
-            )
-        }
-    }
+//    private fun createMockCatalogItem() {
+//        viewModelScope.launch {
+//            mockItemCounter += 1
+//            val counter = mockItemCounter
+//            val sectionTitle = _uiState.value.sections.firstOrNull()?.title ?: "Debug"
+//            createCatalogItemUseCase(
+//                name = "Mock item $counter",
+//                unitPrice = "${(counter % 7) + 1}.99".toBigDecimal(),
+//                sectionTitle = sectionTitle
+//            )
+//        }
+//    }
 
     private fun onSearchChanged(query: String) {
         _uiState.update { state ->
