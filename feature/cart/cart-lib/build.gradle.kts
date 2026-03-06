@@ -1,8 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.hilt.android)
-    alias(libs.plugins.ksp)
 }
 
 android {
@@ -25,9 +23,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:database"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    implementation("javax.inject:javax.inject:1")
     testImplementation(libs.junit)
 }
