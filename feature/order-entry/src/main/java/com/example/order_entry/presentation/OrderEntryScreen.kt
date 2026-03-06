@@ -59,9 +59,7 @@ fun OrderEntryScreen(
                     cartItemCount = cartItemCount,
                     showTopBar = false,
                     showBottomBar = false,
-                    onItemAdded = { item ->
-                        onCatalogItemAdded(item.id, item.name, item.price)
-                    },
+                    onItemAdded = { },
                     onViewCartClicked = {}
                 )
             }

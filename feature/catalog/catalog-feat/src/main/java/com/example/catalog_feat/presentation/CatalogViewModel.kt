@@ -2,6 +2,7 @@ package com.example.catalog_feat.presentation
 
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.ViewModel
+import com.example.cart_lib.usecase.AddItemToCartUseCase
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
@@ -43,7 +44,8 @@ data class CatalogUiState(
 @HiltViewModel
 class CatalogViewModel @Inject constructor(
     private val observeCatalogUseCase: ObserveCatalogUseCase,
-    private val createCatalogItemUseCase: CreateCatalogItemUseCase
+    private val createCatalogItemUseCase: CreateCatalogItemUseCase,
+    private val addItemToCartUseCase: AddItemToCartUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CatalogUiState())
@@ -57,9 +59,19 @@ class CatalogViewModel @Inject constructor(
         when (event) {
             is CatalogUiEvent.SearchChanged -> onSearchChanged(event.query)
             is CatalogUiEvent.SectionSelected -> onSectionSelected(event.sectionId)
-            is CatalogUiEvent.AddToCartClicked -> Unit
+            is CatalogUiEvent.AddToCartClicked -> addItemToCart(event)
             is CatalogUiEvent.CreateCatalogItemSubmitted -> createCatalogItem(event)
             CatalogUiEvent.RetryClicked -> Unit
+        }
+    }
+
+    private fun addItemToCart(event: CatalogUiEvent.AddToCartClicked) {
+        viewModelScope.launch {
+            addItemToCartUseCase(
+                productId = event.item.id,
+                name = event.item.name,
+                unitPrice = event.item.price,
+            )
         }
     }
 
