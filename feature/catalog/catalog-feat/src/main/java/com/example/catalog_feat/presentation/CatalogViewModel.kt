@@ -21,6 +21,7 @@ sealed interface CatalogUiEvent {
     data class SearchChanged(val query: String) : CatalogUiEvent
     data class SectionSelected(val sectionId: String?) : CatalogUiEvent
     data class AddToCartClicked(val item: CatalogItem) : CatalogUiEvent
+    data object CreateMockCatalogItemClicked : CatalogUiEvent
     data class CreateCatalogItemSubmitted(
         val name: String,
         val price: String,
@@ -47,6 +48,7 @@ class CatalogViewModel @Inject constructor(
     private val createCatalogItemUseCase: CreateCatalogItemUseCase,
     private val addItemToCartUseCase: AddItemToCartUseCase
 ) : ViewModel() {
+    private var mockItemCounter = 0
 
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
@@ -60,6 +62,7 @@ class CatalogViewModel @Inject constructor(
             is CatalogUiEvent.SearchChanged -> onSearchChanged(event.query)
             is CatalogUiEvent.SectionSelected -> onSectionSelected(event.sectionId)
             is CatalogUiEvent.AddToCartClicked -> addItemToCart(event)
+            CatalogUiEvent.CreateMockCatalogItemClicked -> createMockCatalogItem()
             is CatalogUiEvent.CreateCatalogItemSubmitted -> createCatalogItem(event)
             CatalogUiEvent.RetryClicked -> Unit
         }
@@ -111,6 +114,19 @@ class CatalogViewModel @Inject constructor(
             createCatalogItemUseCase(
                 name = name,
                 unitPrice = price,
+                sectionTitle = sectionTitle
+            )
+        }
+    }
+
+    private fun createMockCatalogItem() {
+        viewModelScope.launch {
+            mockItemCounter += 1
+            val counter = mockItemCounter
+            val sectionTitle = _uiState.value.sections.firstOrNull()?.title ?: "Debug"
+            createCatalogItemUseCase(
+                name = "Mock item $counter",
+                unitPrice = "${(counter % 7) + 1}.99".toBigDecimal(),
                 sectionTitle = sectionTitle
             )
         }

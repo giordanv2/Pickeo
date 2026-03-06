@@ -1,5 +1,6 @@
 package com.example.catalog_feat.presentation
 
+import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,6 +95,8 @@ fun CatalogScreen(
     var priceInput by rememberSaveable { mutableStateOf("") }
     var sectionInput by rememberSaveable { mutableStateOf("") }
     var dialogError by remember { mutableStateOf<String?>(null) }
+    val isDebugBuild = LocalContext.current.applicationContext.applicationInfo.flags and
+        ApplicationInfo.FLAG_DEBUGGABLE != 0
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -123,11 +127,22 @@ fun CatalogScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                dialogError = null
-                showCreateDialog = true
-            }) {
-                Text("+")
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                if (isDebugBuild) {
+                    FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
+                        Text("Mock")
+                    }
+                }
+
+                FloatingActionButton(onClick = {
+                    dialogError = null
+                    showCreateDialog = true
+                }) {
+                    Text("+")
+                }
             }
         }
     ) { padding ->
