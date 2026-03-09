@@ -14,4 +14,6 @@ interface CatalogRepository {
     )
 
     suspend fun reorderCatalogItems(itemIdsInOrder: List<String>)
+
+    suspend fun removeCatalogItem(itemId: String)
 }

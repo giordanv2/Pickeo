@@ -18,6 +18,9 @@ interface CatalogItemDao {
     @Query("UPDATE catalog_items SET sortOrder = :sortOrder WHERE id = :itemId")
     suspend fun updateSortOrder(itemId: String, sortOrder: Int)
 
+    @Query("DELETE FROM catalog_items WHERE id = :itemId")
+    suspend fun deleteById(itemId: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: CatalogItemEntity)
 }
