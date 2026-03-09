@@ -27,6 +27,7 @@ class CatalogRoomDataSource @Inject constructor(
         unitPrice: BigDecimal,
         sectionTitle: String
     ) {
+        val nextSortOrder = catalogItemDao.nextSortOrder()
         val entity = CatalogItemEntity(
             id = UUID.randomUUID().toString(),
             name = name,
@@ -34,9 +35,16 @@ class CatalogRoomDataSource @Inject constructor(
             sectionId = sectionTitle.toSectionId(),
             sectionTitle = sectionTitle,
             isAvailable = true,
+            sortOrder = nextSortOrder,
             createdAt = System.currentTimeMillis()
         )
         catalogItemDao.upsert(entity)
+    }
+
+    override suspend fun reorderCatalogItems(itemIdsInOrder: List<String>) {
+        itemIdsInOrder.forEachIndexed { index, itemId ->
+            catalogItemDao.updateSortOrder(itemId = itemId, sortOrder = index)
+        }
     }
 }
 

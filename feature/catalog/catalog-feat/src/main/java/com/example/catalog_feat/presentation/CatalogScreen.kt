@@ -2,23 +2,35 @@ package com.example.catalog_feat.presentation
 
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -26,7 +38,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -34,6 +47,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +73,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.math.RoundingMode
 
 @Composable
@@ -101,6 +118,10 @@ fun CatalogScreen(
     var priceInput by rememberSaveable { mutableStateOf("") }
     var sectionInput by rememberSaveable { mutableStateOf("") }
     var dialogError by remember { mutableStateOf<String?>(null) }
+    val lazyGridState = rememberLazyGridState()
+    val reorderableGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
+        onEvent(CatalogUiEvent.ReorderItemMoved(from.index, to.index))
+    }
     val isDebugBuild = LocalContext.current.applicationContext.applicationInfo.flags and
         ApplicationInfo.FLAG_DEBUGGABLE != 0
 
@@ -111,7 +132,7 @@ fun CatalogScreen(
                 TopAppBar(
                     title = {
                         Text(text = state.catalog?.name ?: "Catalog")
-                    }
+                    },
                 )
             }
         },
@@ -134,9 +155,9 @@ fun CatalogScreen(
         },
         floatingActionButton = {
             if (isDebugBuild) {
-                FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
-                    Text("Mock")
-                }
+//                FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
+//                    Text("Mock")
+//                }
             }
         }
     ) { padding ->
@@ -187,48 +208,107 @@ fun CatalogScreen(
                 onValueChange = { onEvent(CatalogUiEvent.SearchChanged(it)) },
                 label = { Text("Search catalog") },
                 singleLine = true,
+                enabled = !state.isEditMode,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
-                    selected = state.selectedSectionId == null,
-                    onClick = { onEvent(CatalogUiEvent.SectionSelected(null)) },
-                    label = { Text("All") }
-                )
-                state.sections.forEach { section ->
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     FilterChip(
-                        selected = state.selectedSectionId == section.id,
-                        onClick = { onEvent(CatalogUiEvent.SectionSelected(section.id)) },
-                        label = { Text(section.title) }
+                        selected = state.selectedSectionId == null,
+                        onClick = {
+                            if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(null))
+                        },
+                        label = { Text("All") }
                     )
+
+                    state.sections.forEach { section ->
+                        FilterChip(
+                            selected = state.selectedSectionId == section.id,
+                            onClick = {
+                                if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(section.id))
+                            },
+                            label = { Text(section.title) }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                if (state.isEditMode) {
+                    IconButton(onClick = { onEvent(CatalogUiEvent.CancelEditModeClicked) }) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel catalog reorder")
+                    }
+                    IconButton(onClick = { onEvent(CatalogUiEvent.ConfirmEditModeClicked) }) {
+                        Icon(Icons.Default.Check, contentDescription = "Confirm catalog reorder")
+                    }
+                } else {
+                    IconButton(
+                        onClick = { onEvent(CatalogUiEvent.EnterEditModeClicked) },
+                        enabled = state.visibleItems.isNotEmpty()
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit catalog order")
+                    }
                 }
             }
 
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 164.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(state.visibleItems, key = { it.id }) { item ->
-                    CatalogItemCard(
-                        item = item,
-                        onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
-                    )
-                }
-                item(key = "create-catalog-item-card") {
-                    CreateCatalogItemCard(
-                        onClick = {
-                            dialogError = null
-                            showCreateDialog = true
+            if (state.isEditMode) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 164.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    state = lazyGridState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val displayedItems = state.editableItems
+                    items(displayedItems, key = { it.id }) { item ->
+                        ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
+                            CatalogItemCard(
+                                item = item,
+                                isEditMode = true,
+                                isDragging = isDragging,
+                                cardDragModifier = Modifier.longPressDraggableHandle(),
+                                onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
+                            )
                         }
-                    )
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 164.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    state = lazyGridState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val displayedItems = state.visibleItems
+                    items(displayedItems, key = { it.id }) { item ->
+                        ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
+                            CatalogItemCard(
+                                item = item,
+                                isEditMode = false,
+                                isDragging = isDragging,
+                                cardDragModifier = Modifier,
+                                onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
+                            )
+                        }
+                    }
+                    item(key = "create-catalog-item-card") {
+                        CreateCatalogItemCard(
+                            onClick = {
+                                dialogError = null
+                                showCreateDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -360,15 +440,52 @@ private fun CreateCatalogItemCard(onClick: () -> Unit) {
 @Composable
 private fun CatalogItemCard(
     item: CatalogItem,
+    isEditMode: Boolean,
+    isDragging: Boolean,
+    cardDragModifier: Modifier,
     onAddClicked: () -> Unit
 ) {
     val alpha = if (item.isAvailable) 1f else 0.5f
+    val wiggleDirection = if (item.id.hashCode() % 2 == 0) 1f else -1f
+    val wiggleTransition = rememberInfiniteTransition(label = "catalog-wiggle")
+    val wiggleRotation by wiggleTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 120, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "catalog-wiggle-rotation"
+    )
+    val wiggleScale by wiggleTransition.animateFloat(
+        initialValue = 0.992f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 170, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "catalog-wiggle-scale"
+    )
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDragging) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            }
+        ),
         modifier = Modifier
             .fillMaxWidth()
+//            .padding(if (isEditMode) 24.dp else 0.dp)
             .clip(MaterialTheme.shapes.medium)
-            .clickable(enabled = item.isAvailable, onClick = onAddClicked)
+            .graphicsLayer {
+                rotationZ = if (isEditMode) wiggleRotation * wiggleDirection else 0f
+                scaleX = if (isEditMode) wiggleScale else 1f
+                scaleY = if (isEditMode) wiggleScale else 1f
+            }
+            .then(if (isEditMode) cardDragModifier else Modifier)
+            .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
     ) {
         Column(
             modifier = Modifier
@@ -417,13 +534,16 @@ private fun CatalogItemCard(
 @Composable
 private fun CatalogScreenPreview() {
     val sampleCatalog = previewCatalog()
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = darkColorScheme()
+    ) {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
                 catalog = sampleCatalog,
                 selectedSectionId = null,
-                visibleItems = sampleCatalog.sections.flatMap { it.items }
+                visibleItems = sampleCatalog.sections.flatMap { it.items },
+                editableItems = sampleCatalog.sections.flatMap { it.items }
             ),
             cartItemCount = 3,
             showTopBar = true,
@@ -445,13 +565,16 @@ private fun CatalogScreenPreview() {
 @Composable
 private fun CatalogScreenPreview2() {
     val sampleCatalog = previewCatalog()
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = darkColorScheme()
+    ) {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
                 catalog = sampleCatalog,
                 selectedSectionId = null,
-                visibleItems = sampleCatalog.sections.flatMap { it.items }
+                visibleItems = sampleCatalog.sections.flatMap { it.items },
+                editableItems = sampleCatalog.sections.flatMap { it.items }
             ),
             cartItemCount = 3,
             showTopBar = true,
