@@ -46,6 +46,10 @@ class CatalogRoomDataSource @Inject constructor(
             catalogItemDao.updateSortOrder(itemId = itemId, sortOrder = index)
         }
     }
+
+    override suspend fun removeCatalogItem(itemId: String) {
+        catalogItemDao.deleteById(itemId)
+    }
 }
 
 private fun List<CatalogItemEntity>.toCatalog(): Catalog {

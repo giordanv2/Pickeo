@@ -12,6 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,12 +22,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -38,12 +42,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -58,15 +64,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -127,37 +139,11 @@ fun CatalogScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = {
-            if (showTopBar) {
-                TopAppBar(
-                    title = {
-                        Text(text = state.catalog?.name ?: "Catalog")
-                    },
-                )
-            }
-        },
-        bottomBar = {
-            if (showBottomBar) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "Items in cart: $cartItemCount")
-                    OutlinedButton(onClick = onViewCartClicked) {
-                        Text("View Cart")
-                    }
-                }
-            }
-        },
         floatingActionButton = {
             if (isDebugBuild) {
-//                FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
-//                    Text("Mock")
-//                }
+                FloatingActionButton(onClick = { onEvent(CatalogUiEvent.CreateMockCatalogItemClicked) }) {
+                    Text("Mock")
+                }
             }
         }
     ) { padding ->
@@ -201,7 +187,6 @@ fun CatalogScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
                 value = state.searchQuery,
@@ -211,6 +196,8 @@ fun CatalogScreen(
                 enabled = !state.isEditMode,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -264,6 +251,7 @@ fun CatalogScreen(
                 columns = GridCells.Adaptive(minSize = 164.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 12.dp),
                 state = lazyGridState,
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -279,7 +267,10 @@ fun CatalogScreen(
                             } else {
                                 Modifier
                             },
-                            onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
+                            onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) },
+                            onDeleteClicked = {
+                                onEvent(CatalogUiEvent.DeleteCatalogItemClicked(item.id))
+                            }
                         )
                     }
                 }
@@ -370,32 +361,21 @@ fun CatalogScreen(
 
 @Composable
 private fun CreateCatalogItemCard(onClick: () -> Unit) {
-    val outlineColor = MaterialTheme.colorScheme.primary
+    val outlineColor = MaterialTheme.colorScheme.primaryContainer
+    val shape = MaterialTheme.shapes.medium
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(0.dp, Color.Transparent),
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .drawBehind {
-                val strokeWidth = 2.dp.toPx()
-                val inset = strokeWidth / 2
-                drawRoundRect(
-                    color = outlineColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
-                    size = androidx.compose.ui.geometry.Size(
-                        width = size.width - strokeWidth,
-                        height = size.height - strokeWidth
-                    ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx(), 12.dp.toPx()),
-                    style = Stroke(
-                        width = strokeWidth,
-                        cap = StrokeCap.Round,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 12f))
-                    )
-                )
-            }
+            .dashedBorder(
+                width = 1.dp,
+                color = outlineColor,
+                shape = shape
+            )
             .clickable(onClick = onClick)
     ) {
         Box(
@@ -420,13 +400,46 @@ private fun CreateCatalogItemCard(onClick: () -> Unit) {
     }
 }
 
+fun Modifier.dashedBorder(
+    width: Dp,
+    color: Color,
+    shape: Shape,
+    dashOn: Dp = 16.dp,
+    dashOff: Dp = 12.dp
+): Modifier = drawWithCache {
+    val strokeWidth = width.toPx()
+    val inset = strokeWidth / 2f
+    val dash = PathEffect.dashPathEffect(floatArrayOf(dashOn.toPx(), dashOff.toPx()))
+    val outline = shape.createOutline(
+        size = Size(size.width - strokeWidth, size.height - strokeWidth),
+        layoutDirection = layoutDirection,
+        density = this
+    )
+
+    onDrawWithContent {
+        drawContent()
+        translate(inset, inset) {
+            drawOutline(
+                outline = outline,
+                color = color,
+                style = Stroke(
+                    width = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dash
+                )
+            )
+        }
+    }
+}
+
 @Composable
 private fun CatalogItemCard(
     item: CatalogItem,
     isEditMode: Boolean,
     isDragging: Boolean,
     cardDragModifier: Modifier,
-    onAddClicked: () -> Unit
+    onAddClicked: () -> Unit,
+    onDeleteClicked: () -> Unit
 ) {
     val alpha = if (item.isAvailable) 1f else 0.5f
     val wiggleDirection = if (item.id.hashCode() % 2 == 0) 1f else -1f
@@ -450,63 +463,88 @@ private fun CatalogItemCard(
         label = "catalog-wiggle-scale"
     )
 
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDragging) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerLow
-            }
-        ),
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
             .graphicsLayer {
                 rotationZ = if (isEditMode) wiggleRotation * wiggleDirection else 0f
                 scaleX = if (isEditMode) wiggleScale else 1f
                 scaleY = if (isEditMode) wiggleScale else 1f
             }
-            .then(if (isEditMode) cardDragModifier else Modifier)
-            .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
     ) {
-        Column(
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDragging) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerLow
+                }
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .then(if (isEditMode) cardDragModifier else Modifier)
+                .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
         ) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(84.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = alpha)),
-                contentAlignment = Alignment.Center
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = item.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(84.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = alpha)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = item.name.take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
 
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "$${item.price.setScale(2, RoundingMode.HALF_UP)}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (!item.isAvailable) {
                 Text(
-                    text = "Out of stock",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFB3261E)
+                    text = item.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                Text(
+                    text = "$${item.price.setScale(2, RoundingMode.HALF_UP)}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (!item.isAvailable) {
+                    Text(
+                        text = "Out of stock",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFB3261E)
+                    )
+                }
+            }
+        }
+
+        if (isEditMode) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp,
+                shadowElevation = 3.dp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 8.dp, y = (-8).dp)
+                    .size(32.dp)
+            ) {
+                IconButton(
+                    onClick = onDeleteClicked,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Delete catalog item")
+                }
             }
         }
     }

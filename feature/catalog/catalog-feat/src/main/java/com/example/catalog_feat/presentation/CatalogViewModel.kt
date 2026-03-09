@@ -8,6 +8,7 @@ import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
 import com.example.catalog_lib.domain.usecase.CreateCatalogItemUseCase
 import com.example.catalog_lib.domain.usecase.ObserveCatalogUseCase
+import com.example.catalog_lib.domain.usecase.RemoveCatalogItemUseCase
 import com.example.catalog_lib.domain.usecase.ReorderCatalogItemsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.math.BigDecimal
@@ -32,6 +33,7 @@ sealed interface CatalogUiEvent {
     data object CancelEditModeClicked : CatalogUiEvent
     data object ConfirmEditModeClicked : CatalogUiEvent
     data class ReorderItemMoved(val fromIndex: Int, val toIndex: Int) : CatalogUiEvent
+    data class DeleteCatalogItemClicked(val itemId: String) : CatalogUiEvent
     data object RetryClicked : CatalogUiEvent
 }
 
@@ -54,6 +56,7 @@ class CatalogViewModel @Inject constructor(
     private val observeCatalogUseCase: ObserveCatalogUseCase,
     private val createCatalogItemUseCase: CreateCatalogItemUseCase,
     private val reorderCatalogItemsUseCase: ReorderCatalogItemsUseCase,
+    private val removeCatalogItemUseCase: RemoveCatalogItemUseCase,
     private val addItemToCartUseCase: AddItemToCartUseCase
 ) : ViewModel() {
     private var mockItemCounter = 0
@@ -76,7 +79,21 @@ class CatalogViewModel @Inject constructor(
             CatalogUiEvent.CancelEditModeClicked -> cancelEditMode()
             CatalogUiEvent.ConfirmEditModeClicked -> confirmEditMode()
             is CatalogUiEvent.ReorderItemMoved -> moveEditableItem(event.fromIndex, event.toIndex)
+            is CatalogUiEvent.DeleteCatalogItemClicked -> deleteCatalogItem(event.itemId)
             CatalogUiEvent.RetryClicked -> Unit
+        }
+    }
+
+    private fun deleteCatalogItem(itemId: String) {
+        if (itemId.isBlank()) return
+        _uiState.update { state ->
+            state.copy(
+                visibleItems = state.visibleItems.filterNot { it.id == itemId },
+                editableItems = state.editableItems.filterNot { it.id == itemId }
+            )
+        }
+        viewModelScope.launch {
+            removeCatalogItemUseCase(itemId)
         }
     }
 
