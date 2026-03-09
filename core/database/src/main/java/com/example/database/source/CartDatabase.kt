@@ -9,7 +9,7 @@ import com.example.database.model.CartItemEntity
 
 @Database(
     entities = [CartItemEntity::class, CatalogItemEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class CartDatabase : RoomDatabase() {

@@ -8,6 +8,7 @@ import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
 import com.example.catalog_lib.domain.usecase.CreateCatalogItemUseCase
 import com.example.catalog_lib.domain.usecase.ObserveCatalogUseCase
+import com.example.catalog_lib.domain.usecase.ReorderCatalogItemsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -27,6 +28,10 @@ sealed interface CatalogUiEvent {
         val price: String,
         val sectionTitle: String
     ) : CatalogUiEvent
+    data object EnterEditModeClicked : CatalogUiEvent
+    data object CancelEditModeClicked : CatalogUiEvent
+    data object ConfirmEditModeClicked : CatalogUiEvent
+    data class ReorderItemMoved(val fromIndex: Int, val toIndex: Int) : CatalogUiEvent
     data object RetryClicked : CatalogUiEvent
 }
 
@@ -37,6 +42,8 @@ data class CatalogUiState(
     val selectedSectionId: String? = null,
     val searchQuery: String = "",
     val visibleItems: List<CatalogItem> = emptyList(),
+    val isEditMode: Boolean = false,
+    val editableItems: List<CatalogItem> = emptyList(),
 ) {
     val sections: List<CatalogSection>
         get() = catalog?.sections.orEmpty()
@@ -46,6 +53,7 @@ data class CatalogUiState(
 class CatalogViewModel @Inject constructor(
     private val observeCatalogUseCase: ObserveCatalogUseCase,
     private val createCatalogItemUseCase: CreateCatalogItemUseCase,
+    private val reorderCatalogItemsUseCase: ReorderCatalogItemsUseCase,
     private val addItemToCartUseCase: AddItemToCartUseCase
 ) : ViewModel() {
     private var mockItemCounter = 0
@@ -64,6 +72,10 @@ class CatalogViewModel @Inject constructor(
             is CatalogUiEvent.AddToCartClicked -> addItemToCart(event)
             CatalogUiEvent.CreateMockCatalogItemClicked -> createMockCatalogItem()
             is CatalogUiEvent.CreateCatalogItemSubmitted -> createCatalogItem(event)
+            CatalogUiEvent.EnterEditModeClicked -> enterEditMode()
+            CatalogUiEvent.CancelEditModeClicked -> cancelEditMode()
+            CatalogUiEvent.ConfirmEditModeClicked -> confirmEditMode()
+            is CatalogUiEvent.ReorderItemMoved -> moveEditableItem(event.fromIndex, event.toIndex)
             CatalogUiEvent.RetryClicked -> Unit
         }
     }
@@ -94,7 +106,8 @@ class CatalogViewModel @Inject constructor(
                         errorMessage = null,
                         catalog = catalog,
                         selectedSectionId = safeSelectedSectionId,
-                        visibleItems = visibleItems
+                        visibleItems = visibleItems,
+                        editableItems = if (state.isEditMode) state.editableItems else emptyList()
                     )
                 }
             }
@@ -134,6 +147,7 @@ class CatalogViewModel @Inject constructor(
 
     private fun onSearchChanged(query: String) {
         _uiState.update { state ->
+            if (state.isEditMode) return@update state
             val trimmed = query.trim()
             state.copy(
                 searchQuery = query,
@@ -148,6 +162,7 @@ class CatalogViewModel @Inject constructor(
 
     private fun onSectionSelected(sectionId: String?) {
         _uiState.update { state ->
+            if (state.isEditMode) return@update state
             state.copy(
                 selectedSectionId = sectionId,
                 visibleItems = buildVisibleItems(
@@ -174,6 +189,68 @@ class CatalogViewModel @Inject constructor(
         return selectedSectionItems.filter { item ->
             item.name.contains(query, ignoreCase = true) ||
                 item.id.contains(query, ignoreCase = true)
+        }
+    }
+
+    private fun enterEditMode() {
+        _uiState.update { state ->
+            if (state.isEditMode || state.visibleItems.isEmpty()) return@update state
+            state.copy(
+                isEditMode = true,
+                editableItems = state.visibleItems
+            )
+        }
+    }
+
+    private fun cancelEditMode() {
+        _uiState.update { state ->
+            state.copy(
+                isEditMode = false,
+                editableItems = emptyList()
+            )
+        }
+    }
+
+    private fun moveEditableItem(fromIndex: Int, toIndex: Int) {
+        _uiState.update { state ->
+            if (!state.isEditMode) return@update state
+            if (fromIndex !in state.editableItems.indices || toIndex !in state.editableItems.indices) {
+                return@update state
+            }
+            val mutableItems = state.editableItems.toMutableList()
+            val moved = mutableItems.removeAt(fromIndex)
+            mutableItems.add(toIndex, moved)
+            state.copy(editableItems = mutableItems)
+        }
+    }
+
+    private fun confirmEditMode() {
+        val currentState = _uiState.value
+        val editableIds = currentState.editableItems.map { it.id }
+        if (editableIds.isEmpty()) {
+            cancelEditMode()
+            return
+        }
+
+        val baseCatalogOrder = currentState.sections.flatMap { it.items }.map { it.id }
+        val idsToPersist = if (editableIds.size == baseCatalogOrder.size) {
+            editableIds
+        } else {
+            val editableIdSet = editableIds.toSet()
+            val reorderedEditable = ArrayDeque(editableIds)
+            baseCatalogOrder.map { id ->
+                if (editableIdSet.contains(id)) reorderedEditable.removeFirst() else id
+            }
+        }
+
+        viewModelScope.launch {
+            reorderCatalogItemsUseCase(idsToPersist)
+            _uiState.update { state ->
+                state.copy(
+                    isEditMode = false,
+                    editableItems = emptyList()
+                )
+            }
         }
     }
 }

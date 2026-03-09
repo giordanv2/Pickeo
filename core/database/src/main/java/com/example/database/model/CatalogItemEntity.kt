@@ -11,5 +11,6 @@ data class CatalogItemEntity(
     val sectionId: String,
     val sectionTitle: String,
     val isAvailable: Boolean,
+    val sortOrder: Int,
     val createdAt: Long
 )

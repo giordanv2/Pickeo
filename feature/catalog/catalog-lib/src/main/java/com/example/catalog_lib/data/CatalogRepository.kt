@@ -12,4 +12,6 @@ interface CatalogRepository {
         unitPrice: BigDecimal,
         sectionTitle: String
     )
+
+    suspend fun reorderCatalogItems(itemIdsInOrder: List<String>)
 }
