@@ -260,47 +260,30 @@ fun CatalogScreen(
                 }
             }
 
-            if (state.isEditMode) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 164.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    state = lazyGridState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val displayedItems = state.editableItems
-                    items(displayedItems, key = { it.id }) { item ->
-                        ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
-                            CatalogItemCard(
-                                item = item,
-                                isEditMode = true,
-                                isDragging = isDragging,
-                                cardDragModifier = Modifier.longPressDraggableHandle(),
-                                onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
-                            )
-                        }
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 164.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                state = lazyGridState,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val displayedItems = if (state.isEditMode) state.editableItems else state.visibleItems
+                items(displayedItems, key = { it.id }) { item ->
+                    ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
+                        CatalogItemCard(
+                            item = item,
+                            isEditMode = state.isEditMode,
+                            isDragging = isDragging,
+                            cardDragModifier = if (state.isEditMode) {
+                                Modifier.longPressDraggableHandle()
+                            } else {
+                                Modifier
+                            },
+                            onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
+                        )
                     }
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 164.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    state = lazyGridState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val displayedItems = state.visibleItems
-                    items(displayedItems, key = { it.id }) { item ->
-                        ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
-                            CatalogItemCard(
-                                item = item,
-                                isEditMode = false,
-                                isDragging = isDragging,
-                                cardDragModifier = Modifier,
-                                onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) }
-                            )
-                        }
-                    }
+                if (!state.isEditMode) {
                     item(key = "create-catalog-item-card") {
                         CreateCatalogItemCard(
                             onClick = {
@@ -477,7 +460,6 @@ private fun CatalogItemCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-//            .padding(if (isEditMode) 24.dp else 0.dp)
             .clip(MaterialTheme.shapes.medium)
             .graphicsLayer {
                 rotationZ = if (isEditMode) wiggleRotation * wiggleDirection else 0f
