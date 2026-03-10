@@ -32,6 +32,9 @@ sealed interface CatalogUiEvent {
     data object EnterEditModeClicked : CatalogUiEvent
     data object CancelEditModeClicked : CatalogUiEvent
     data object ConfirmEditModeClicked : CatalogUiEvent
+    data object UndoEditModeClicked : CatalogUiEvent
+    data object EditDragStarted : CatalogUiEvent
+    data object EditDragStopped : CatalogUiEvent
     data class ReorderItemMoved(val fromIndex: Int, val toIndex: Int) : CatalogUiEvent
     data class DeleteCatalogItemClicked(val itemId: String) : CatalogUiEvent
     data object RetryClicked : CatalogUiEvent
@@ -47,6 +50,7 @@ data class CatalogUiState(
     val isEditMode: Boolean = false,
     val editableItems: List<CatalogItem> = emptyList(),
     val pendingDeletedItemIds: Set<String> = emptySet(),
+    val canUndoEditChange: Boolean = false,
 ) {
     val sections: List<CatalogSection>
         get() = catalog?.sections.orEmpty()
@@ -60,7 +64,15 @@ class CatalogViewModel @Inject constructor(
     private val removeCatalogItemUseCase: RemoveCatalogItemUseCase,
     private val addItemToCartUseCase: AddItemToCartUseCase
 ) : ViewModel() {
+    private data class EditSnapshot(
+        val visibleItems: List<CatalogItem>,
+        val editableItems: List<CatalogItem>,
+        val pendingDeletedItemIds: Set<String>
+    )
+
     private var mockItemCounter = 0
+    private val editHistory = ArrayDeque<EditSnapshot>()
+    private var hasSnapshotForCurrentDrag = false
 
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
@@ -79,6 +91,9 @@ class CatalogViewModel @Inject constructor(
             CatalogUiEvent.EnterEditModeClicked -> enterEditMode()
             CatalogUiEvent.CancelEditModeClicked -> cancelEditMode()
             CatalogUiEvent.ConfirmEditModeClicked -> confirmEditMode()
+            CatalogUiEvent.UndoEditModeClicked -> undoEditChange()
+            CatalogUiEvent.EditDragStarted -> onEditDragStarted()
+            CatalogUiEvent.EditDragStopped -> onEditDragStopped()
             is CatalogUiEvent.ReorderItemMoved -> moveEditableItem(event.fromIndex, event.toIndex)
             is CatalogUiEvent.DeleteCatalogItemClicked -> deleteCatalogItem(event.itemId)
             CatalogUiEvent.RetryClicked -> Unit
@@ -95,11 +110,13 @@ class CatalogViewModel @Inject constructor(
             return
         }
 
+        saveEditSnapshot(currentState)
         _uiState.update { state ->
             state.copy(
                 visibleItems = state.visibleItems.filterNot { it.id == itemId },
                 editableItems = state.editableItems.filterNot { it.id == itemId },
-                pendingDeletedItemIds = state.pendingDeletedItemIds + itemId
+                pendingDeletedItemIds = state.pendingDeletedItemIds + itemId,
+                canUndoEditChange = editHistory.isNotEmpty()
             )
         }
     }
@@ -136,7 +153,8 @@ class CatalogViewModel @Inject constructor(
                             state.pendingDeletedItemIds.intersect(catalog.sections.flatMap { it.items }.map { it.id }.toSet())
                         } else {
                             emptySet()
-                        }
+                        },
+                        canUndoEditChange = if (state.isEditMode) editHistory.isNotEmpty() else false
                     )
                 }
             }
@@ -222,17 +240,22 @@ class CatalogViewModel @Inject constructor(
     }
 
     private fun enterEditMode() {
+        editHistory.clear()
+        hasSnapshotForCurrentDrag = false
         _uiState.update { state ->
             if (state.isEditMode || state.visibleItems.isEmpty()) return@update state
             state.copy(
                 isEditMode = true,
                 editableItems = state.visibleItems,
-                pendingDeletedItemIds = emptySet()
+                pendingDeletedItemIds = emptySet(),
+                canUndoEditChange = false
             )
         }
     }
 
     private fun cancelEditMode() {
+        editHistory.clear()
+        hasSnapshotForCurrentDrag = false
         _uiState.update { state ->
             val restoredVisibleItems = buildVisibleItems(
                 sections = state.sections,
@@ -243,7 +266,8 @@ class CatalogViewModel @Inject constructor(
                 isEditMode = false,
                 visibleItems = restoredVisibleItems,
                 editableItems = emptyList(),
-                pendingDeletedItemIds = emptySet()
+                pendingDeletedItemIds = emptySet(),
+                canUndoEditChange = false
             )
         }
     }
@@ -254,10 +278,17 @@ class CatalogViewModel @Inject constructor(
             if (fromIndex !in state.editableItems.indices || toIndex !in state.editableItems.indices) {
                 return@update state
             }
+            if (!hasSnapshotForCurrentDrag) {
+                saveEditSnapshot(state)
+                hasSnapshotForCurrentDrag = true
+            }
             val mutableItems = state.editableItems.toMutableList()
             val moved = mutableItems.removeAt(fromIndex)
             mutableItems.add(toIndex, moved)
-            state.copy(editableItems = mutableItems)
+            state.copy(
+                editableItems = mutableItems,
+                canUndoEditChange = editHistory.isNotEmpty()
+            )
         }
     }
 
@@ -284,13 +315,50 @@ class CatalogViewModel @Inject constructor(
         viewModelScope.launch {
             pendingDeletedIds.forEach { removeCatalogItemUseCase(it) }
             reorderCatalogItemsUseCase(idsToPersist)
+            editHistory.clear()
+            hasSnapshotForCurrentDrag = false
             _uiState.update { state ->
                 state.copy(
                     isEditMode = false,
                     editableItems = emptyList(),
-                    pendingDeletedItemIds = emptySet()
+                    pendingDeletedItemIds = emptySet(),
+                    canUndoEditChange = false
                 )
             }
         }
+    }
+
+    private fun undoEditChange() {
+        val currentState = _uiState.value
+        if (!currentState.isEditMode || editHistory.isEmpty()) return
+        hasSnapshotForCurrentDrag = false
+        val snapshot = editHistory.removeLast()
+        _uiState.update { state ->
+            state.copy(
+                visibleItems = snapshot.visibleItems,
+                editableItems = snapshot.editableItems,
+                pendingDeletedItemIds = snapshot.pendingDeletedItemIds,
+                canUndoEditChange = editHistory.isNotEmpty()
+            )
+        }
+    }
+
+    private fun saveEditSnapshot(state: CatalogUiState) {
+        editHistory.addLast(
+            EditSnapshot(
+                visibleItems = state.visibleItems,
+                editableItems = state.editableItems,
+                pendingDeletedItemIds = state.pendingDeletedItemIds
+            )
+        )
+    }
+
+    private fun onEditDragStarted() {
+        if (!_uiState.value.isEditMode) return
+        hasSnapshotForCurrentDrag = false
+    }
+
+    private fun onEditDragStopped() {
+        hasSnapshotForCurrentDrag = false
     }
 }
