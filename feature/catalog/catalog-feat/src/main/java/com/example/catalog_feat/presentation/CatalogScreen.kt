@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
@@ -231,6 +232,12 @@ fun CatalogScreen(
                 Spacer(Modifier.width(8.dp))
 
                 if (state.isEditMode) {
+                    IconButton(
+                        onClick = { onEvent(CatalogUiEvent.UndoEditModeClicked) },
+                        enabled = state.canUndoEditChange
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo last catalog edit")
+                    }
                     IconButton(onClick = { onEvent(CatalogUiEvent.CancelEditModeClicked) }) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel catalog reorder")
                     }
@@ -263,7 +270,10 @@ fun CatalogScreen(
                             isEditMode = state.isEditMode,
                             isDragging = isDragging,
                             cardDragModifier = if (state.isEditMode) {
-                                Modifier.longPressDraggableHandle()
+                                Modifier.longPressDraggableHandle(
+                                    onDragStarted = { onEvent(CatalogUiEvent.EditDragStarted) },
+                                    onDragStopped = { onEvent(CatalogUiEvent.EditDragStopped) }
+                                )
                             } else {
                                 Modifier
                             },
