@@ -46,6 +46,7 @@ data class CatalogUiState(
     val visibleItems: List<CatalogItem> = emptyList(),
     val isEditMode: Boolean = false,
     val editableItems: List<CatalogItem> = emptyList(),
+    val pendingDeletedItemIds: Set<String> = emptySet(),
 ) {
     val sections: List<CatalogSection>
         get() = catalog?.sections.orEmpty()
@@ -86,14 +87,20 @@ class CatalogViewModel @Inject constructor(
 
     private fun deleteCatalogItem(itemId: String) {
         if (itemId.isBlank()) return
+        val currentState = _uiState.value
+        if (!currentState.isEditMode) {
+            viewModelScope.launch {
+                removeCatalogItemUseCase(itemId)
+            }
+            return
+        }
+
         _uiState.update { state ->
             state.copy(
                 visibleItems = state.visibleItems.filterNot { it.id == itemId },
-                editableItems = state.editableItems.filterNot { it.id == itemId }
+                editableItems = state.editableItems.filterNot { it.id == itemId },
+                pendingDeletedItemIds = state.pendingDeletedItemIds + itemId
             )
-        }
-        viewModelScope.launch {
-            removeCatalogItemUseCase(itemId)
         }
     }
 
@@ -124,7 +131,12 @@ class CatalogViewModel @Inject constructor(
                         catalog = catalog,
                         selectedSectionId = safeSelectedSectionId,
                         visibleItems = visibleItems,
-                        editableItems = if (state.isEditMode) state.editableItems else emptyList()
+                        editableItems = if (state.isEditMode) state.editableItems else emptyList(),
+                        pendingDeletedItemIds = if (state.isEditMode) {
+                            state.pendingDeletedItemIds.intersect(catalog.sections.flatMap { it.items }.map { it.id }.toSet())
+                        } else {
+                            emptySet()
+                        }
                     )
                 }
             }
@@ -214,16 +226,24 @@ class CatalogViewModel @Inject constructor(
             if (state.isEditMode || state.visibleItems.isEmpty()) return@update state
             state.copy(
                 isEditMode = true,
-                editableItems = state.visibleItems
+                editableItems = state.visibleItems,
+                pendingDeletedItemIds = emptySet()
             )
         }
     }
 
     private fun cancelEditMode() {
         _uiState.update { state ->
+            val restoredVisibleItems = buildVisibleItems(
+                sections = state.sections,
+                selectedSectionId = state.selectedSectionId,
+                query = state.searchQuery.trim()
+            )
             state.copy(
                 isEditMode = false,
-                editableItems = emptyList()
+                visibleItems = restoredVisibleItems,
+                editableItems = emptyList(),
+                pendingDeletedItemIds = emptySet()
             )
         }
     }
@@ -243,13 +263,14 @@ class CatalogViewModel @Inject constructor(
 
     private fun confirmEditMode() {
         val currentState = _uiState.value
+        val pendingDeletedIds = currentState.pendingDeletedItemIds
+        val pendingDeletedSet = pendingDeletedIds.toSet()
         val editableIds = currentState.editableItems.map { it.id }
-        if (editableIds.isEmpty()) {
-            cancelEditMode()
-            return
-        }
 
-        val baseCatalogOrder = currentState.sections.flatMap { it.items }.map { it.id }
+        val baseCatalogOrder = currentState.sections
+            .flatMap { it.items }
+            .map { it.id }
+            .filterNot { pendingDeletedSet.contains(it) }
         val idsToPersist = if (editableIds.size == baseCatalogOrder.size) {
             editableIds
         } else {
@@ -261,11 +282,13 @@ class CatalogViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            pendingDeletedIds.forEach { removeCatalogItemUseCase(it) }
             reorderCatalogItemsUseCase(idsToPersist)
             _uiState.update { state ->
                 state.copy(
                     isEditMode = false,
-                    editableItems = emptyList()
+                    editableItems = emptyList(),
+                    pendingDeletedItemIds = emptySet()
                 )
             }
         }
