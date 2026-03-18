@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.catalog_feat.presentation.CatalogRoute
+import com.example.catalog_feat.presentation.CatalogScreen
 import com.example.cart_feat.presentation.CartRoute
 
 @Composable
@@ -55,7 +55,7 @@ fun OrderEntryScreen(
                     .weight(2f)
                     .fillMaxHeight()
             ) {
-                CatalogRoute(
+                CatalogScreen(
                     cartItemCount = cartItemCount,
                     showTopBar = false,
                     showBottomBar = false,
