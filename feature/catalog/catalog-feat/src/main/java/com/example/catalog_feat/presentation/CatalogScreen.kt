@@ -35,7 +35,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,14 +49,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -122,11 +116,7 @@ internal fun CatalogScreen(
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showCreateDialog by rememberSaveable { mutableStateOf(false) }
-    var nameInput by rememberSaveable { mutableStateOf("") }
-    var priceInput by rememberSaveable { mutableStateOf("") }
-    var sectionInput by rememberSaveable { mutableStateOf("") }
-    var dialogError by remember { mutableStateOf<String?>(null) }
+    val createCatalogItemDialogState = rememberCreateCatalogItemDialogState()
     val lazyGridState = rememberLazyGridState()
     val reorderableGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
         onEvent(CatalogUiEvent.ReorderItemMoved(from.index, to.index))
@@ -265,7 +255,7 @@ internal fun CatalogScreen(
                             item = item,
                             isEditMode = state.isEditMode,
                             isDragging = isDragging,
-                            cardDragModifier = if (state.isEditMode) {
+                            modifier = if (state.isEditMode) {
                                 Modifier.longPressDraggableHandle(
                                     onDragStarted = { onEvent(CatalogUiEvent.EditDragStarted) },
                                     onDragStopped = { onEvent(CatalogUiEvent.EditDragStopped) }
@@ -283,10 +273,7 @@ internal fun CatalogScreen(
                 if (!state.isEditMode) {
                     item(key = "create-catalog-item-card") {
                         CreateCatalogItemCard(
-                            onClick = {
-                                dialogError = null
-                                showCreateDialog = true
-                            }
+                            onClick = createCatalogItemDialogState::show
                         )
                     }
                 }
@@ -294,75 +281,18 @@ internal fun CatalogScreen(
         }
     }
 
-    if (showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
-            title = { Text("Create Catalog Item") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text("Name*") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = priceInput,
-                        onValueChange = { priceInput = it },
-                        label = { Text("Price*") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = sectionInput,
-                        onValueChange = { sectionInput = it },
-                        label = { Text("Section*") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    dialogError?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val parsedPrice = priceInput.trim().toBigDecimalOrNull()
-                        if (nameInput.isBlank() || sectionInput.isBlank() || parsedPrice == null || parsedPrice <= java.math.BigDecimal.ZERO) {
-                            dialogError = "Fill all required fields with a valid price."
-                            return@TextButton
-                        }
-
-                        onEvent(
-                            CatalogUiEvent.CreateCatalogItemSubmitted(
-                                name = nameInput,
-                                price = priceInput,
-                                sectionTitle = sectionInput
-                            )
-                        )
-                        nameInput = ""
-                        priceInput = ""
-                        sectionInput = ""
-                        dialogError = null
-                        showCreateDialog = false
-                    }
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+    CreateCatalogItemDialog(
+        state = createCatalogItemDialogState,
+        onCreateSubmitted = { name, price, sectionTitle ->
+            onEvent(
+                CatalogUiEvent.CreateCatalogItemSubmitted(
+                    name = name,
+                    price = price,
+                    sectionTitle = sectionTitle
+                )
+            )
+        }
+    )
 }
 
 @Composable
@@ -443,9 +373,9 @@ private fun CatalogItemCard(
     item: CatalogItem,
     isEditMode: Boolean,
     isDragging: Boolean,
-    cardDragModifier: Modifier,
+    modifier: Modifier,
     onAddClicked: () -> Unit,
-    onDeleteClicked: () -> Unit
+    onDeleteClicked: () -> Unit,
 ) {
     val alpha = if (item.isAvailable) 1f else 0.5f
     val wiggleDirection = if (item.id.hashCode() % 2 == 0) 1f else -1f
@@ -489,7 +419,7 @@ private fun CatalogItemCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .then(if (isEditMode) cardDragModifier else Modifier)
+                .then(if (isEditMode) modifier else Modifier)
                 .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
         ) {
             Column(
