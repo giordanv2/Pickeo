@@ -22,22 +22,13 @@ import com.example.catalog_feat.presentation.CatalogScreen
 import com.example.cart_feat.presentation.CartRoute
 
 @Composable
-fun OrderEntryRoute(
-    viewModel: OrderEntryViewModel = hiltViewModel()
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    OrderEntryScreen(
-        cartItemCount = state.cartSummary.totalItems,
-        onCatalogItemAdded = viewModel::onCatalogItemAdded
-    )
+fun OrderEntryRoute() {
+    OrderEntryScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderEntryScreen(
-    cartItemCount: Int,
-    onCatalogItemAdded: (String, String, java.math.BigDecimal) -> Unit
-) {
+fun OrderEntryScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -55,13 +46,7 @@ fun OrderEntryScreen(
                     .weight(2f)
                     .fillMaxHeight()
             ) {
-                CatalogScreen(
-                    cartItemCount = cartItemCount,
-                    showTopBar = false,
-                    showBottomBar = false,
-                    onItemAdded = { },
-                    onViewCartClicked = {}
-                )
+                CatalogScreen()
             }
 
             Surface(

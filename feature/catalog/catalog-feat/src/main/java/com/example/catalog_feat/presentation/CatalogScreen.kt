@@ -83,24 +83,12 @@ import java.math.RoundingMode
 @Composable
 fun CatalogScreen(
     viewModel: CatalogViewModel = hiltViewModel(),
-    cartItemCount: Int = 0,
-    showTopBar: Boolean = true,
-    showBottomBar: Boolean = true,
-    onItemAdded: (CatalogItem) -> Unit = {},
-    onViewCartClicked: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CatalogScreen(
         state = state,
-        cartItemCount = cartItemCount,
-        showTopBar = showTopBar,
-        showBottomBar = showBottomBar,
-        onViewCartClicked = onViewCartClicked,
         onEvent = { event ->
             viewModel.onEvent(event)
-            if (event is CatalogUiEvent.AddToCartClicked && event.item.isAvailable) {
-                onItemAdded(event.item)
-            }
         }
     )
 }
@@ -109,10 +97,6 @@ fun CatalogScreen(
 @Composable
 internal fun CatalogScreen(
     state: CatalogUiState,
-    cartItemCount: Int,
-    showTopBar: Boolean,
-    showBottomBar: Boolean,
-    onViewCartClicked: () -> Unit,
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -501,10 +485,6 @@ private fun CatalogScreenPreview() {
                 visibleItems = sampleCatalog.sections.flatMap { it.items },
                 editableItems = sampleCatalog.sections.flatMap { it.items }
             ),
-            cartItemCount = 3,
-            showTopBar = true,
-            showBottomBar = true,
-            onViewCartClicked = {},
             onEvent = {}
         )
     }
@@ -532,10 +512,6 @@ private fun CatalogScreenPreview2() {
                 visibleItems = sampleCatalog.sections.flatMap { it.items },
                 editableItems = sampleCatalog.sections.flatMap { it.items }
             ),
-            cartItemCount = 3,
-            showTopBar = true,
-            showBottomBar = true,
-            onViewCartClicked = {},
             onEvent = {}
         )
     }
