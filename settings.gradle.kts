@@ -22,6 +22,8 @@ dependencyResolutionManagement {
 rootProject.name = "Pickeo"
 include(":app")
 include(":core:database")
+include(":core:designsystem")
+include(":core:ui")
 include(":feature:catalog:catalog-feat")
 include(":feature:catalog:catalog-lib")
 include(":feature:cart:cart-feat")

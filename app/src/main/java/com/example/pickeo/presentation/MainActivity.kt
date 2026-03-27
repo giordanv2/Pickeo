@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.example.core.designsystem.theme.PickeoTheme
 import com.example.order_entry.presentation.OrderEntryRoute
-import com.example.pickeo.ui.theme.PickeoTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

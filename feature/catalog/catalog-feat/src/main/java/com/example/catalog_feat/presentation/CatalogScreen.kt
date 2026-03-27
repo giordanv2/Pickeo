@@ -68,11 +68,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.core.designsystem.theme.PickeoTheme
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
@@ -500,6 +502,27 @@ private fun CatalogScreenPreview() {
 )
 @Composable
 private fun CatalogScreenPreview2() {
+    val sampleCatalog = previewCatalog()
+    PickeoTheme() {
+        CatalogScreen(
+            state = CatalogUiState(
+                isLoading = false,
+                catalog = sampleCatalog,
+                selectedSectionId = null,
+                visibleItems = sampleCatalog.sections.flatMap { it.items },
+                editableItems = sampleCatalog.sections.flatMap { it.items }
+            ),
+            onEvent = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Expanded",
+    device = Devices.NEXUS_10
+)
+@Composable
+private fun CatalogScreenPreview3() {
     val sampleCatalog = previewCatalog()
     MaterialTheme(
         colorScheme = darkColorScheme()
