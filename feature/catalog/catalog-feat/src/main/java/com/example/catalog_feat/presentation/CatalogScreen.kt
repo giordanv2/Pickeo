@@ -282,79 +282,6 @@ internal fun CatalogScreen(
 }
 
 @Composable
-private fun CreateCatalogItemCard(onClick: () -> Unit) {
-    val outlineColor = MaterialTheme.colorScheme.primaryContainer
-    val shape = MaterialTheme.shapes.medium
-
-    Card(
-        shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .dashedBorder(
-                width = 1.dp,
-                color = outlineColor,
-                shape = shape
-            )
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(168.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "+",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Create item",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-fun Modifier.dashedBorder(
-    width: Dp,
-    color: Color,
-    shape: Shape,
-    dashOn: Dp = 16.dp,
-    dashOff: Dp = 12.dp
-): Modifier = drawWithCache {
-    val strokeWidth = width.toPx()
-    val inset = strokeWidth / 2f
-    val dash = PathEffect.dashPathEffect(floatArrayOf(dashOn.toPx(), dashOff.toPx()))
-    val outline = shape.createOutline(
-        size = Size(size.width - strokeWidth, size.height - strokeWidth),
-        layoutDirection = layoutDirection,
-        density = this
-    )
-
-    onDrawWithContent {
-        drawContent()
-        translate(inset, inset) {
-            drawOutline(
-                outline = outline,
-                color = color,
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = StrokeCap.Round,
-                    pathEffect = dash
-                )
-            )
-        }
-    }
-}
-
-@Composable
 private fun CatalogItemCard(
     item: CatalogItem,
     isEditMode: Boolean,
@@ -468,6 +395,79 @@ private fun CatalogItemCard(
                     Icon(Icons.Default.Close, contentDescription = "Delete catalog item")
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CreateCatalogItemCard(onClick: () -> Unit) {
+    val outlineColor = MaterialTheme.colorScheme.primaryContainer
+    val shape = MaterialTheme.shapes.medium
+
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .dashedBorder(
+                width = 1.dp,
+                color = outlineColor,
+                shape = shape
+            )
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(168.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "+",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Create item",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+fun Modifier.dashedBorder(
+    width: Dp,
+    color: Color,
+    shape: Shape,
+    dashOn: Dp = 16.dp,
+    dashOff: Dp = 12.dp
+): Modifier = drawWithCache {
+    val strokeWidth = width.toPx()
+    val inset = strokeWidth / 2f
+    val dash = PathEffect.dashPathEffect(floatArrayOf(dashOn.toPx(), dashOff.toPx()))
+    val outline = shape.createOutline(
+        size = Size(size.width - strokeWidth, size.height - strokeWidth),
+        layoutDirection = layoutDirection,
+        density = this
+    )
+
+    onDrawWithContent {
+        drawContent()
+        translate(inset, inset) {
+            drawOutline(
+                outline = outline,
+                color = color,
+                style = Stroke(
+                    width = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dash
+                )
+            )
         }
     }
 }
