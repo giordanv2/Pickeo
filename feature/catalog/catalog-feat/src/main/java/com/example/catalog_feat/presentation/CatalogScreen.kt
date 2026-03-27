@@ -519,8 +519,9 @@ private fun CatalogScreenPreview2() {
 
 @Preview(
     name = "Expanded",
-    device = Devices.NEXUS_10
-)
+    device = Devices.NEXUS_10,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    )
 @Composable
 private fun CatalogScreenPreview3() {
     val sampleCatalog = previewCatalog()
