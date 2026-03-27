@@ -472,13 +472,13 @@ private fun CatalogItemCard(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
 private fun CatalogScreenPreview() {
     val sampleCatalog = previewCatalog()
-    MaterialTheme(
-        colorScheme = darkColorScheme()
-    ) {
+    PickeoTheme {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
@@ -524,9 +524,7 @@ private fun CatalogScreenPreview2() {
 @Composable
 private fun CatalogScreenPreview3() {
     val sampleCatalog = previewCatalog()
-    MaterialTheme(
-        colorScheme = darkColorScheme()
-    ) {
+    PickeoTheme {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
