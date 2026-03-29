@@ -60,6 +60,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cart_lib.models.CartItem
 import com.example.cart_lib.models.CartSummary
+import com.example.core.designsystem.theme.PickeoTheme
 import kotlinx.coroutines.delay
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -67,7 +68,7 @@ import java.math.RoundingMode
 import java.util.Locale
 
 @Composable
-fun CartRoute(
+fun CartScreen(
     showTopBar: Boolean = true,
     viewModel: CartViewModel = hiltViewModel()
 ) {
@@ -81,7 +82,7 @@ fun CartRoute(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(
+internal fun CartScreen(
     state: CartUiState,
     showTopBar: Boolean,
     onEvent: (CartUiEvent) -> Unit,
@@ -382,10 +383,12 @@ private fun formatUsd(amount: java.math.BigDecimal): String {
     return "$${formatter.format(amount.setScale(2, RoundingMode.HALF_UP))}"
 }
 
-@Preview(showBackground = true)
+@Preview(
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    )
 @Composable
 private fun CartScreenPreview() {
-    MaterialTheme {
+    PickeoTheme() {
         CartScreen(
             state = CartUiState(
                 isLoading = false,
@@ -422,5 +425,7 @@ private fun CartScreenPreview() {
 )
 @Composable
 private fun CartScreenExpandedPreview() {
-    CartScreenPreview()
+    PickeoTheme() {
+        CartScreenPreview()
+    }
 }

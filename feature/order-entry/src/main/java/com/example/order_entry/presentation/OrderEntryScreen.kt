@@ -13,13 +13,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.catalog_feat.presentation.CatalogScreen
-import com.example.cart_feat.presentation.CartRoute
+import com.example.cart_feat.presentation.CartScreen
 
 @Composable
 fun OrderEntryRoute() {
@@ -61,7 +58,7 @@ fun OrderEntryScreen() {
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                CartRoute(showTopBar = false)
+                CartScreen()
             }
         }
     }
