@@ -1,7 +1,6 @@
 package com.example.catalog_feat.presentation
 
 import android.content.pm.ApplicationInfo
-import android.content.res.Configuration
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -69,8 +68,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -79,6 +76,11 @@ import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
 import com.example.core.designsystem.theme.PickeoTheme
+import com.example.core.ui.PreviewDark
+import com.example.core.ui.PreviewDarkDynamicColors
+import com.example.core.ui.PreviewDarkExpanded
+import com.example.core.ui.PreviewLight
+import com.example.core.ui.PreviewLightExpanded
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.math.RoundingMode
@@ -514,9 +516,27 @@ fun Modifier.dashedBorder(
     }
 }
 
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
+private fun previewCatalog(): Catalog {
+    val items = listOf(
+        CatalogItem(id = "espresso", name = "Espresso", price = "2.50".toBigDecimal()),
+        CatalogItem(id = "latte", name = "Caffe Latte", price = "4.25".toBigDecimal()),
+        CatalogItem(id = "croissant", name = "Croissant", price = "3.50".toBigDecimal())
+    )
+    return Catalog(
+        id = "preview",
+        name = "Catalog",
+        sections = listOf(
+            CatalogSection(id = "coffee", title = "Coffee", items = items.take(2)),
+            CatalogSection(id = "bakery", title = "Bakery", items = items.takeLast(1))
+        )
+    )
+}
+
+@PreviewDark
+@PreviewDarkExpanded
+@PreviewDarkDynamicColors
+@PreviewLight
+@PreviewLightExpanded
 @Composable
 private fun CatalogScreenPreview() {
     val sampleCatalog = previewCatalog()
@@ -532,67 +552,4 @@ private fun CatalogScreenPreview() {
             onEvent = {}
         )
     }
-}
-
-@Preview(
-    name = "Expanded",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true,
-    backgroundColor = 0xFF000000,
-    widthDp = 1280,
-    heightDp = 800
-)
-@Composable
-private fun CatalogScreenPreview2() {
-    val sampleCatalog = previewCatalog()
-    PickeoTheme {
-        CatalogScreen(
-            state = CatalogUiState(
-                isLoading = false,
-                catalog = sampleCatalog,
-                selectedSectionId = null,
-                visibleItems = sampleCatalog.sections.flatMap { it.items },
-                editableItems = sampleCatalog.sections.flatMap { it.items }
-            ),
-            onEvent = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Expanded",
-    device = Devices.NEXUS_10,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    )
-@Composable
-private fun CatalogScreenPreview3() {
-    val sampleCatalog = previewCatalog()
-    PickeoTheme {
-        CatalogScreen(
-            state = CatalogUiState(
-                isLoading = false,
-                catalog = sampleCatalog,
-                selectedSectionId = null,
-                visibleItems = sampleCatalog.sections.flatMap { it.items },
-                editableItems = sampleCatalog.sections.flatMap { it.items }
-            ),
-            onEvent = {}
-        )
-    }
-}
-
-private fun previewCatalog(): Catalog {
-    val items = listOf(
-        CatalogItem(id = "espresso", name = "Espresso", price = "2.50".toBigDecimal()),
-        CatalogItem(id = "latte", name = "Caffe Latte", price = "4.25".toBigDecimal()),
-        CatalogItem(id = "croissant", name = "Croissant", price = "3.50".toBigDecimal())
-    )
-    return Catalog(
-        id = "preview",
-        name = "Catalog",
-        sections = listOf(
-            CatalogSection(id = "coffee", title = "Coffee", items = items.take(2)),
-            CatalogSection(id = "bakery", title = "Bakery", items = items.takeLast(1))
-        )
-    )
 }

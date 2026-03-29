@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(project(":core:designsystem"))
+    implementation(project(":core:ui"))
     implementation(project(":feature:catalog:catalog-lib"))
     implementation(project(":feature:cart:cart-lib"))
     implementation(project(":core:database"))
