@@ -8,20 +8,21 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -49,7 +50,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
@@ -74,10 +75,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.core.designsystem.theme.PickeoTheme
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
+import com.example.core.designsystem.theme.PickeoTheme
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.math.RoundingMode
@@ -291,6 +292,7 @@ private fun CatalogItemCard(
     onDeleteClicked: () -> Unit,
 ) {
     val alpha = if (item.isAvailable) 1f else 0.5f
+    val textAlpha = if (item.isAvailable) 1f else 0.58f
     val wiggleDirection = if (item.id.hashCode() % 2 == 0) 1f else -1f
     val wiggleTransition = rememberInfiniteTransition(label = "catalog-wiggle")
     val wiggleRotation by wiggleTransition.animateFloat(
@@ -321,16 +323,55 @@ private fun CatalogItemCard(
                 scaleY = if (isEditMode) wiggleScale else 1f
             }
     ) {
+        val borderBrush = Brush.linearGradient(
+            colors = if (isDragging) {
+                listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                )
+            } else {
+                listOf(
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                )
+            }
+        )
+        val backgroundBrush = Brush.linearGradient(
+            colors = if (isDragging) {
+                listOf(
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f),
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f),
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                )
+            } else {
+                listOf(
+                    MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 1f)
+                )
+            }
+        )
+
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = if (isDragging) {
-                    MaterialTheme.colorScheme.secondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerLow
-                }
+                containerColor = Color.Transparent
+            ),
+            border = BorderStroke(
+                width = 1.dp,
+                brush = borderBrush
             ),
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    brush = backgroundBrush,
+                    shape = MaterialTheme.shapes.medium
+                )
                 .clip(MaterialTheme.shapes.medium)
                 .then(if (isEditMode) modifier else Modifier)
                 .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
@@ -352,20 +393,21 @@ private fun CatalogItemCard(
                     Text(
                         text = item.name.take(1).uppercase(),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = textAlpha)
                     )
                 }
 
                 Text(
                     text = item.name,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "$${item.price.setScale(2, RoundingMode.HALF_UP)}",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = textAlpha)
                 )
                 if (!item.isAvailable) {
                     Text(
@@ -503,7 +545,7 @@ private fun CatalogScreenPreview() {
 @Composable
 private fun CatalogScreenPreview2() {
     val sampleCatalog = previewCatalog()
-    PickeoTheme() {
+    PickeoTheme {
         CatalogScreen(
             state = CatalogUiState(
                 isLoading = false,
