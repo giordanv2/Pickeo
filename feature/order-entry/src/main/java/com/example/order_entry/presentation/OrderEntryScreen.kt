@@ -25,17 +25,11 @@ import com.example.cart_feat.presentation.CartRoute
 fun OrderEntryRoute() {
     OrderEntryScreen()
 }
-
+    
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderEntryScreen() {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Order Entry", style = MaterialTheme.typography.titleLarge) }
-            )
-        }
-    ) { padding ->
+    Scaffold { padding ->
         Row(
             modifier = Modifier
                 .fillMaxSize()
