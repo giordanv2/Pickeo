@@ -22,16 +22,39 @@ annotation class PreviewDarkDynamicColors
 annotation class PreviewDarkExpanded
 
 @Preview(
+    name = "Expanded Portrait",
+    widthDp = 800,
+    heightDp = 1280,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+annotation class PreviewDarkExpandedPortrait
+
+@Preview(
+    name = "Compact Landscape",
+    device = Devices.PIXEL_7_PRO,
+    widthDp = 960,
+    heightDp = 412,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+annotation class PreviewDarkLandscape
+
+
+@Preview(
     name = "Expanded",
     device = Devices.NEXUS_10,
     uiMode = Configuration.UI_MODE_NIGHT_NO,
 )
 annotation class PreviewLightExpanded
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    device = Devices.PIXEL_7_PRO,
+)
 annotation class PreviewDark
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+    device = Devices.PIXEL_7_PRO
+)
 annotation class PreviewLight
-
 

@@ -1,6 +1,7 @@
 package com.example.order_entry.presentation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,25 +11,50 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.cart_feat.presentation.CartScreen
+import com.example.cart_feat.presentation.CartUiState
 import com.example.catalog_feat.presentation.CatalogScreen
+import com.example.catalog_feat.presentation.CatalogUiState
+import com.example.cart_lib.models.CartItem
+import com.example.cart_lib.models.CartSummary
+import com.example.catalog_lib.models.Catalog
+import com.example.catalog_lib.models.CatalogItem
+import com.example.catalog_lib.models.CatalogSection
 import com.example.cart_feat.presentation.CartRoute
+import com.example.core.designsystem.theme.PickeoTheme
+import com.example.core.ui.PreviewDark
+import com.example.core.ui.PreviewDarkExpanded
+import com.example.core.ui.PreviewDarkExpandedPortrait
+import com.example.core.ui.PreviewDarkLandscape
+import java.math.BigDecimal
 
 @Composable
 fun OrderEntryRoute() {
     OrderEntryScreen()
 }
-    
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderEntryScreen() {
+    OrderEntryScreen(
+        catalogContent = {
+            CatalogScreen()
+        },
+        cartContent = {
+            CartRoute(showTopBar = false)
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OrderEntryScreen(
+    catalogContent: @Composable BoxScope.() -> Unit,
+    cartContent: @Composable BoxScope.() -> Unit,
+) {
     Scaffold { padding ->
         Row(
             modifier = Modifier
@@ -40,7 +66,7 @@ fun OrderEntryScreen() {
                     .weight(2f)
                     .fillMaxHeight()
             ) {
-                CatalogScreen()
+                catalogContent()
             }
 
             Surface(
@@ -55,8 +81,105 @@ fun OrderEntryScreen() {
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                CartRoute(showTopBar = false)
+                cartContent()
             }
         }
     }
+}
+
+@PreviewDark
+@PreviewDarkLandscape
+@PreviewDarkExpanded
+@PreviewDarkExpandedPortrait
+@Composable
+private fun OrderEntryScreenPreview() {
+    val sampleCatalog = previewCatalog()
+    PickeoTheme {
+        OrderEntryScreen(
+            catalogContent = {
+                CatalogScreen(
+                    state = CatalogUiState(
+                        isLoading = false,
+                        catalog = sampleCatalog,
+                        selectedSectionId = null,
+                        visibleItems = sampleCatalog.sections.flatMap { it.items },
+                        editableItems = sampleCatalog.sections.flatMap { it.items }
+                    ),
+                    onEvent = {}
+                )
+            },
+            cartContent = {
+                CartScreen(
+                    state = CartUiState(
+                        isLoading = false,
+                        summary = CartSummary(
+                            items = listOf(
+                                CartItem(
+                                    productId = "espresso",
+                                    name = "Espresso",
+                                    unitPrice = "2.50".toBigDecimal(),
+                                    quantity = 2
+                                ),
+                                CartItem(
+                                    productId = "latte",
+                                    name = "Caffe Latte",
+                                    unitPrice = "4.25".toBigDecimal(),
+                                    quantity = 1
+                                )
+                            )
+                        )
+                    ),
+                    showTopBar = false,
+                    onEvent = {}
+                )
+            }
+        )
+    }
+}
+
+private fun previewCatalog(): Catalog {
+    val coffee = CatalogSection(
+        id = "coffee",
+        title = "Coffee",
+        items = listOf(
+            CatalogItem(
+                id = "espresso",
+                name = "Espresso",
+                price = BigDecimal("2.50")
+            ),
+            CatalogItem(
+                id = "americano",
+                name = "Americano",
+                price = BigDecimal("3.00")
+            ),
+            CatalogItem(
+                id = "latte",
+                name = "Caffe Latte",
+                price = BigDecimal("4.25"),
+                isAvailable = false
+            )
+        )
+    )
+    val food = CatalogSection(
+        id = "food",
+        title = "Bakery",
+        items = listOf(
+            CatalogItem(
+                id = "croissant",
+                name = "Butter Croissant",
+                price = BigDecimal("3.75")
+            ),
+            CatalogItem(
+                id = "muffin",
+                name = "Blueberry Muffin",
+                price = BigDecimal("3.50")
+            )
+        )
+    )
+
+    return Catalog(
+        id = "preview-catalog",
+        name = "Preview Menu",
+        sections = listOf(coffee, food)
+    )
 }

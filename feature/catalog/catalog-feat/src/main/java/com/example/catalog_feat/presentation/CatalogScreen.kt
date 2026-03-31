@@ -100,7 +100,7 @@ fun CatalogScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CatalogScreen(
+fun CatalogScreen(
     state: CatalogUiState,
     onEvent: (CatalogUiEvent) -> Unit,
     modifier: Modifier = Modifier
