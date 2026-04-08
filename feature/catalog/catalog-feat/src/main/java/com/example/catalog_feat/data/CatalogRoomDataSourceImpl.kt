@@ -3,7 +3,7 @@ package com.example.catalog_feat.data
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
-import com.example.catalog_lib.data.CatalogRepository
+import com.example.catalog_lib.data.CatalogRoomDataSource
 import com.example.database.dao.CatalogItemDao
 import com.example.database.model.CatalogItemEntity
 import java.math.BigDecimal
@@ -14,9 +14,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @Singleton
-class CatalogRoomDataSource @Inject constructor(
+class CatalogRoomDataSourceImpl @Inject constructor(
     private val catalogItemDao: CatalogItemDao
-) : CatalogRepository {
+) : CatalogRoomDataSource {
 
     override fun observeCatalog(): Flow<Catalog> {
         return catalogItemDao.observeAll().map { entities -> entities.toCatalog() }

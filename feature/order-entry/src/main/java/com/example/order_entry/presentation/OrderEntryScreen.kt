@@ -1,5 +1,7 @@
 package com.example.order_entry.presentation
 
+import android.app.Activity
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -7,12 +9,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.example.cart_feat.presentation.CartScreen
 import com.example.cart_feat.presentation.CartUiState
@@ -36,7 +44,6 @@ fun OrderEntryRoute() {
     OrderEntryScreen()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderEntryScreen() {
     OrderEntryScreen(
@@ -49,13 +56,31 @@ fun OrderEntryScreen() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun OrderEntryScreen(
     catalogContent: @Composable BoxScope.() -> Unit,
     cartContent: @Composable BoxScope.() -> Unit,
 ) {
+    val configuration = LocalConfiguration.current
+    val windowSizeClass = rememberWindowSizeClass()
+    val showCartPane = !(
+        windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact &&
+            configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        )
+
     Scaffold { padding ->
+        if (!showCartPane) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                catalogContent()
+            }
+            return@Scaffold
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,6 +110,22 @@ private fun OrderEntryScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+private fun rememberWindowSizeClass(): WindowSizeClass {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+
+    return (context as? Activity)?.let { activity ->
+        calculateWindowSizeClass(activity)
+    } ?: WindowSizeClass.calculateFromSize(
+        DpSize(
+            width = configuration.screenWidthDp.dp,
+            height = configuration.screenHeightDp.dp
+        )
+    )
 }
 
 @PreviewDark

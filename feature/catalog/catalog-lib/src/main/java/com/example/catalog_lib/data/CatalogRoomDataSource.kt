@@ -4,7 +4,7 @@ import com.example.catalog_lib.models.Catalog
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
-interface CatalogRepository {
+interface CatalogRoomDataSource {
     fun observeCatalog(): Flow<Catalog>
 
     suspend fun createCatalogItem(
