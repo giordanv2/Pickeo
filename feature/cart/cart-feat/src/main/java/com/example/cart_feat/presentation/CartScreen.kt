@@ -154,11 +154,6 @@ internal fun CartScreen(
             ScaffoldDefaults.contentWindowInsets
         } else {
             WindowInsets(0, 0, 0, 0)
-        },
-        topBar = {
-            if (showTopBar) {
-                TopAppBar(title = { Text("Cart") })
-            }
         }
     ) { padding ->
         if (state.isLoading) {
