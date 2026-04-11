@@ -1,5 +1,6 @@
 package com.example.catalog_feat.di
 
+import com.example.catalog_feat.data.CatalogRoomDataSourceImpl
 import com.example.catalog_lib.data.CatalogRoomDataSource
 import dagger.Binds
 import dagger.Module
@@ -13,5 +14,5 @@ abstract class CatalogDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindCatalogRepository(repository: CatalogRoomDataSource): CatalogRoomDataSource
+    abstract fun bindCatalogRepository(repository: CatalogRoomDataSourceImpl): CatalogRoomDataSource
 }

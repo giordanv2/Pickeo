@@ -95,23 +95,20 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
-fun CartScreen(
-    showTopBar: Boolean = true,
+fun CartRoute(
     viewModel: CartViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CartScreen(
         state = state,
-        showTopBar = showTopBar,
         onEvent = viewModel::onEvent
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CartScreen(
+fun CartScreen(
     state: CartUiState,
-    showTopBar: Boolean,
     onEvent: (CartUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -150,11 +147,6 @@ internal fun CartScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        contentWindowInsets = if (showTopBar) {
-            ScaffoldDefaults.contentWindowInsets
-        } else {
-            WindowInsets(0, 0, 0, 0)
-        }
     ) { padding ->
         if (state.isLoading) {
             Box(
@@ -171,8 +163,7 @@ internal fun CartScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
@@ -749,7 +740,6 @@ private fun CartScreenPreview() {
                     )
                 )
             ),
-            showTopBar = true,
             onEvent = {}
         )
     }

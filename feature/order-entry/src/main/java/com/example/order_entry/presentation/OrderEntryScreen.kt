@@ -22,16 +22,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.example.cart_feat.presentation.CartRoute
 import com.example.cart_feat.presentation.CartScreen
 import com.example.cart_feat.presentation.CartUiState
 import com.example.catalog_feat.presentation.CatalogScreen
 import com.example.catalog_feat.presentation.CatalogUiState
 import com.example.cart_lib.models.CartItem
 import com.example.cart_lib.models.CartSummary
+import com.example.catalog_feat.presentation.CatalogRoute
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
-import com.example.cart_feat.presentation.CartRoute
 import com.example.core.designsystem.theme.PickeoTheme
 import com.example.core.ui.PreviewDark
 import com.example.core.ui.PreviewDarkExpanded
@@ -48,10 +49,10 @@ fun OrderEntryRoute() {
 fun OrderEntryScreen() {
     OrderEntryScreen(
         catalogContent = {
-            CatalogScreen()
+            CatalogRoute()
         },
         cartContent = {
-            CartRoute(showTopBar = false)
+            CartRoute()
         }
     )
 }
@@ -170,7 +171,6 @@ private fun OrderEntryScreenPreview() {
                             )
                         )
                     ),
-                    showTopBar = false,
                     onEvent = {}
                 )
             }

@@ -86,7 +86,7 @@ import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.math.RoundingMode
 
 @Composable
-fun CatalogScreen(
+fun CatalogRoute(
     viewModel: CatalogViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
