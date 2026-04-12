@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -67,6 +68,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -159,111 +161,142 @@ fun CatalogScreen(
             return@Scaffold
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
+        Row(
         ) {
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = { onEvent(CatalogUiEvent.SearchChanged(it)) },
-                label = { Text("Search catalog") },
-                singleLine = true,
-                enabled = !state.isEditMode,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(top = 12.dp, start = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
+                FilterChip(
+                    selected = state.selectedSectionId == null,
+                    onClick = {
+                        if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(null))
+                    },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
-                        .weight(1f)
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = state.selectedSectionId == null,
-                        onClick = {
-                            if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(null))
-                        },
-                        label = { Text("All") }
-                    )
-
-                    state.sections.forEach { section ->
-                        FilterChip(
-                            selected = state.selectedSectionId == section.id,
-                            onClick = {
-                                if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(section.id))
-                            },
-                            label = { Text(section.title) }
+                        .width(76.dp)
+                        .height(76.dp),
+                    label = {
+                        Text(
+                            text = "All",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }
+                )
 
-                Spacer(Modifier.width(8.dp))
-
-                if (state.isEditMode) {
-                    IconButton(
-                        onClick = { onEvent(CatalogUiEvent.UndoEditModeClicked) },
-                        enabled = state.canUndoEditChange
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo last catalog edit")
-                    }
-                    IconButton(onClick = { onEvent(CatalogUiEvent.CancelEditModeClicked) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel catalog reorder")
-                    }
-                    IconButton(onClick = { onEvent(CatalogUiEvent.ConfirmEditModeClicked) }) {
-                        Icon(Icons.Default.Check, contentDescription = "Confirm catalog reorder")
-                    }
-                } else {
-                    IconButton(
-                        onClick = { onEvent(CatalogUiEvent.EnterEditModeClicked) },
-                        enabled = state.visibleItems.isNotEmpty()
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit catalog order")
-                    }
+                state.sections.forEach { section ->
+                    FilterChip(
+                        selected = state.selectedSectionId == section.id,
+                        onClick = {
+                            if (!state.isEditMode) onEvent(CatalogUiEvent.SectionSelected(section.id))
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .width(76.dp)
+                            .height(76.dp),
+                        label = {
+                            Text(
+                                text = section.title,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    )
                 }
             }
 
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 164.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 12.dp),
-                state = lazyGridState,
-                modifier = Modifier.fillMaxSize()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
             ) {
-                val displayedItems = if (state.isEditMode) state.editableItems else state.visibleItems
-                items(displayedItems, key = { it.id }) { item ->
-                    ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
-                        CatalogItemCard(
-                            item = item,
-                            isEditMode = state.isEditMode,
-                            isDragging = isDragging,
-                            modifier = if (state.isEditMode) {
-                                Modifier.longPressDraggableHandle(
-                                    onDragStarted = { onEvent(CatalogUiEvent.EditDragStarted) },
-                                    onDragStopped = { onEvent(CatalogUiEvent.EditDragStopped) }
-                                )
-                            } else {
-                                Modifier
-                            },
-                            onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) },
-                            onDeleteClicked = {
-                                onEvent(CatalogUiEvent.DeleteCatalogItemClicked(item.id))
-                            }
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = { onEvent(CatalogUiEvent.SearchChanged(it)) },
+                            label = { Text("Search catalog") },
+                            singleLine = true,
+                            enabled = !state.isEditMode,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    if (state.isEditMode) {
+                        IconButton(
+                            onClick = { onEvent(CatalogUiEvent.UndoEditModeClicked) },
+                            enabled = state.canUndoEditChange
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Undo last catalog edit")
+                        }
+                        IconButton(onClick = { onEvent(CatalogUiEvent.CancelEditModeClicked) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel catalog reorder")
+                        }
+                        IconButton(onClick = { onEvent(CatalogUiEvent.ConfirmEditModeClicked) }) {
+                            Icon(Icons.Default.Check, contentDescription = "Confirm catalog reorder")
+                        }
+                    } else {
+                        IconButton(
+                            onClick = { onEvent(CatalogUiEvent.EnterEditModeClicked) },
+                            enabled = state.visibleItems.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit catalog order")
+                        }
+                    }
                 }
-                if (!state.isEditMode) {
-                    item(key = "create-catalog-item-card") {
-                        CreateCatalogItemCard(
-                            onClick = createCatalogItemDialogState::show
-                        )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 164.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(top = 12.dp),
+                    state = lazyGridState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val displayedItems = if (state.isEditMode) state.editableItems else state.visibleItems
+                    items(displayedItems, key = { it.id }) { item ->
+                        ReorderableItem(reorderableGridState, key = item.id) { isDragging ->
+                            CatalogItemCard(
+                                item = item,
+                                isEditMode = state.isEditMode,
+                                isDragging = isDragging,
+                                modifier = if (state.isEditMode) {
+                                    Modifier.longPressDraggableHandle(
+                                        onDragStarted = { onEvent(CatalogUiEvent.EditDragStarted) },
+                                        onDragStopped = { onEvent(CatalogUiEvent.EditDragStopped) }
+                                    )
+                                } else {
+                                    Modifier
+                                },
+                                onAddClicked = { onEvent(CatalogUiEvent.AddToCartClicked(item)) },
+                                onDeleteClicked = {
+                                    onEvent(CatalogUiEvent.DeleteCatalogItemClicked(item.id))
+                                }
+                            )
+                        }
+                    }
+                    if (!state.isEditMode) {
+                        item(key = "create-catalog-item-card") {
+                            CreateCatalogItemCard(
+                                onClick = createCatalogItemDialogState::show
+                            )
+                        }
                     }
                 }
             }
