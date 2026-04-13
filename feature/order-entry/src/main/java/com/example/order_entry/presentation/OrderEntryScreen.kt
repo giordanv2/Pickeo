@@ -9,14 +9,34 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -25,11 +45,11 @@ import androidx.compose.ui.unit.dp
 import com.example.cart_feat.presentation.CartRoute
 import com.example.cart_feat.presentation.CartScreen
 import com.example.cart_feat.presentation.CartUiState
-import com.example.catalog_feat.presentation.CatalogScreen
-import com.example.catalog_feat.presentation.CatalogUiState
 import com.example.cart_lib.models.CartItem
 import com.example.cart_lib.models.CartSummary
 import com.example.catalog_feat.presentation.CatalogRoute
+import com.example.catalog_feat.presentation.CatalogScreen
+import com.example.catalog_feat.presentation.CatalogUiState
 import com.example.catalog_lib.models.Catalog
 import com.example.catalog_lib.models.CatalogItem
 import com.example.catalog_lib.models.CatalogSection
@@ -38,6 +58,7 @@ import com.example.core.ui.PreviewDark
 import com.example.core.ui.PreviewDarkExpanded
 import com.example.core.ui.PreviewDarkExpandedPortrait
 import com.example.core.ui.PreviewDarkLandscape
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 @Composable
@@ -57,7 +78,7 @@ fun OrderEntryScreen() {
     )
 }
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun OrderEntryScreen(
     catalogContent: @Composable BoxScope.() -> Unit,
@@ -65,52 +86,145 @@ private fun OrderEntryScreen(
 ) {
     val configuration = LocalConfiguration.current
     val windowSizeClass = rememberWindowSizeClass()
+    val drawerState = androidx.compose.material3.rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var selectedDestination by rememberSaveable { mutableStateOf(OrderEntryDestination.OrderEntry) }
     val showCartPane = !(
         windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact &&
             configuration.orientation == Configuration.ORIENTATION_PORTRAIT
         )
 
-    Scaffold { padding ->
-        if (!showCartPane) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(240.dp)
             ) {
-                catalogContent()
+                Text(
+                    text = "Navigate",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 20.dp)
+                )
+                OrderEntryDestination.entries.forEach { destination ->
+                    NavigationDrawerItem(
+                        label = { Text(destination.label) },
+                        selected = selectedDestination == destination,
+                        onClick = {
+                            selectedDestination = destination
+                            scope.launch { drawerState.close() }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = destination.icon,
+                                contentDescription = destination.label
+                            )
+                        },
+                        modifier = Modifier.padding(
+                            NavigationDrawerItemDefaults.ItemPadding
+                        )
+                    )
+                }
             }
-            return@Scaffold
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(2f)
-                    .fillMaxHeight()
-            ) {
-                catalogContent()
+    ) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text(selectedDestination.label) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Open navigation menu"
+                            )
+                        }
+                    }
+                )
             }
+        ) { padding ->
+            when (selectedDestination) {
+                OrderEntryDestination.OrderEntry -> {
+                    if (!showCartPane) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                        ) {
+                            catalogContent()
+                        }
+                        return@Scaffold
+                    }
 
-            Surface(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            ) {}
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(2f)
+                                .fillMaxHeight()
+                        ) {
+                            catalogContent()
+                        }
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
-                cartContent()
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(1.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        ) {}
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                        ) {
+                            cartContent()
+                        }
+                    }
+                }
+
+                OrderEntryDestination.Catalog -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        catalogContent()
+                    }
+                }
+
+                OrderEntryDestination.Cart -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        cartContent()
+                    }
+                }
             }
         }
     }
+}
+
+private enum class OrderEntryDestination(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    OrderEntry(
+        label = "Order Entry",
+        icon = Icons.Default.Home
+    ),
+    Catalog(
+        label = "Catalog",
+        icon = Icons.Default.List
+    ),
+    Cart(
+        label = "Cart",
+        icon = Icons.Default.ShoppingCart
+    )
 }
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)

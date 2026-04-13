@@ -261,6 +261,8 @@ fun CatalogScreen(
                     }
                 }
 
+                Spacer(Modifier.height(12.dp))
+
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 164.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

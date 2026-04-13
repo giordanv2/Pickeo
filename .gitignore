@@ -19,3 +19,6 @@ local.properties
 # Misc
 captures/
 *.log
+
+# Kotlin
+.kotlin/
