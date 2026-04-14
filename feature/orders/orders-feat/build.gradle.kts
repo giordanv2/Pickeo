@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.order_entry"
+    namespace = "com.example.orders_feat"
     compileSdk = 35
 
     defaultConfig {
@@ -42,23 +42,20 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(project(":core:database"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
-    implementation(project(":feature:catalog:catalog-feat"))
-    implementation(project(":feature:catalog:catalog-lib"))
-    implementation(project(":feature:cart:cart-feat"))
-    implementation(project(":feature:cart:cart-lib"))
-    implementation(project(":feature:orders:orders-feat"))
+    implementation(project(":feature:orders:orders-lib"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.compose.material3:material3-window-size-class")
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.junit)

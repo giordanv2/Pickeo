@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -58,6 +58,9 @@ import com.example.core.ui.PreviewDark
 import com.example.core.ui.PreviewDarkExpanded
 import com.example.core.ui.PreviewDarkExpandedPortrait
 import com.example.core.ui.PreviewDarkLandscape
+import com.example.orders_feat.presentation.OrdersRoute
+import com.example.orders_feat.presentation.OrdersScreen
+import com.example.orders_feat.presentation.OrdersUiState
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -74,6 +77,9 @@ fun OrderEntryScreen() {
         },
         cartContent = {
             CartRoute()
+        },
+        ordersContent = {
+            OrdersRoute()
         }
     )
 }
@@ -83,6 +89,7 @@ fun OrderEntryScreen() {
 private fun OrderEntryScreen(
     catalogContent: @Composable BoxScope.() -> Unit,
     cartContent: @Composable BoxScope.() -> Unit,
+    ordersContent: @Composable BoxScope.() -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val windowSizeClass = rememberWindowSizeClass()
@@ -204,6 +211,16 @@ private fun OrderEntryScreen(
                         cartContent()
                     }
                 }
+
+                OrderEntryDestination.Orders -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        ordersContent()
+                    }
+                }
             }
         }
     }
@@ -219,11 +236,15 @@ private enum class OrderEntryDestination(
     ),
     Catalog(
         label = "Catalog",
-        icon = Icons.Default.List
+        icon = Icons.AutoMirrored.Filled.List
     ),
     Cart(
         label = "Cart",
         icon = Icons.Default.ShoppingCart
+    ),
+    Orders(
+        label = "Orders",
+        icon = Icons.AutoMirrored.Filled.List
     )
 }
 
@@ -284,6 +305,16 @@ private fun OrderEntryScreenPreview() {
                                 )
                             )
                         )
+                    ),
+                    onEvent = {}
+                )
+            },
+            ordersContent = {
+                OrdersScreen(
+                    state = OrdersUiState(
+                        isLoading = false,
+                        orders = emptyList(),
+                        selectedOrderId = null
                     ),
                     onEvent = {}
                 )

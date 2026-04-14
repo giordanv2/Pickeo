@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.database.dao.CatalogItemDao
 import com.example.database.dao.CartItemDao
+import com.example.database.dao.OrdersDao
 import com.example.database.source.CartDatabase
 import dagger.Module
 import dagger.Provides
@@ -31,4 +32,7 @@ object DatabaseModule {
 
     @Provides
     fun provideCatalogItemDao(database: CartDatabase): CatalogItemDao = database.catalogItemDao()
+
+    @Provides
+    fun provideOrdersDao(database: CartDatabase): OrdersDao = database.ordersDao()
 }
