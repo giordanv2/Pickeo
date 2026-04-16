@@ -147,6 +147,27 @@ fun CartScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Cart")
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            revealedItemId = null
+                            onEvent(CartUiEvent.ClearClicked)
+                        },
+                        enabled = !isCartEmpty
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Clear whole cart"
+                        )
+                    }
+                }
+            )
+        }
     ) { padding ->
         if (state.isLoading) {
             Box(
@@ -163,7 +184,8 @@ fun CartScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(padding)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
@@ -268,13 +290,10 @@ fun CartScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                         ) {
                             OutlinedButton(
-                                onClick = {
-                                    revealedItemId = null
-                                    onEvent(CartUiEvent.ClearClicked)
-                                },
+                                onClick = { revealedItemId = null },
                                 enabled = !isCartEmpty
                             ) {
-                                Text("Clear")
+                                Text("Save")
                             }
                             Button(
                                 onClick = { revealedItemId = null },
