@@ -2,7 +2,6 @@ package com.example.cart_feat.presentation
 
 import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -57,7 +56,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,9 +68,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,15 +110,21 @@ fun CartScreen(
     val itemShape = MaterialTheme.shapes.medium
     val isCartEmpty = state.summary.items.isEmpty()
     var revealedItemId by rememberSaveable { mutableStateOf<String?>(null) }
+    var revealedItemAction by rememberSaveable { mutableStateOf<RevealedSwipeAction?>(null) }
     var notesByItemId by rememberSaveable { mutableStateOf<Map<String, String>>(emptyMap()) }
     var editingNoteItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingNoteText by rememberSaveable { mutableStateOf("") }
     val dismissRevealInteractionSource = remember { MutableInteractionSource() }
 
-    LaunchedEffect(state.summary.items, revealedItemId, notesByItemId, editingNoteItemId) {
+    fun closeRevealedItemActions() {
+        revealedItemId = null
+        revealedItemAction = null
+    }
+
+    LaunchedEffect(state.summary.items, revealedItemId, revealedItemAction, notesByItemId, editingNoteItemId) {
         val validItemIds = state.summary.items.map { it.productId }.toSet()
         if (revealedItemId != null && state.summary.items.none { it.productId == revealedItemId }) {
-            revealedItemId = null
+            closeRevealedItemActions()
         }
         if (notesByItemId.keys.any { it !in validItemIds }) {
             notesByItemId = notesByItemId.filterKeys { it in validItemIds }
@@ -139,7 +140,7 @@ fun CartScreen(
             interactionSource = dismissRevealInteractionSource,
             indication = null
         ) {
-            revealedItemId = null
+            closeRevealedItemActions()
         }
     } else {
         Modifier
@@ -155,7 +156,7 @@ fun CartScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            revealedItemId = null
+                            closeRevealedItemActions()
                             onEvent(CartUiEvent.ClearClicked)
                         },
                         enabled = !isCartEmpty
@@ -210,37 +211,43 @@ fun CartScreen(
                             CartItemCard(
                                 item = item,
                                 shape = itemShape,
-                                isDeleteRevealed = revealedItemId == item.productId,
-                                onDeleteRevealedChanged = { isRevealed ->
-                                    revealedItemId = when {
-                                        isRevealed -> item.productId
-                                        revealedItemId == item.productId -> null
-                                        else -> revealedItemId
+                                revealedAction = if (revealedItemId == item.productId) {
+                                    revealedItemAction
+                                } else {
+                                    null
+                                },
+                                onRevealedActionChanged = { revealedAction ->
+                                    when {
+                                        revealedAction != null -> {
+                                            revealedItemId = item.productId
+                                            revealedItemAction = revealedAction
+                                        }
+                                        revealedItemId == item.productId -> closeRevealedItemActions()
                                     }
                                 },
                                 onDelete = {
                                     if (revealedItemId == item.productId) {
-                                        revealedItemId = null
+                                        closeRevealedItemActions()
                                     }
                                     notesByItemId = notesByItemId - item.productId
                                     onEvent(CartUiEvent.RemoveClicked(item.productId))
                                 },
                                 onNote = {
                                     if (revealedItemId == item.productId) {
-                                        revealedItemId = null
+                                        closeRevealedItemActions()
                                     }
                                     editingNoteItemId = item.productId
                                     editingNoteText = notesByItemId[item.productId].orEmpty()
                                 },
                                 onIncrement = {
                                     if (revealedItemId == item.productId) {
-                                        revealedItemId = null
+                                        closeRevealedItemActions()
                                     }
                                     onEvent(CartUiEvent.IncrementClicked(item.productId))
                                 },
                                 onDecrement = {
                                     if (revealedItemId == item.productId) {
-                                        revealedItemId = null
+                                        closeRevealedItemActions()
                                     }
                                     onEvent(CartUiEvent.DecrementClicked(item.productId))
                                 },
@@ -291,7 +298,7 @@ fun CartScreen(
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    revealedItemId = null
+                                    closeRevealedItemActions()
                                     onEvent(CartUiEvent.SaveClicked(notesByItemId))
                                 },
                                 enabled = !isCartEmpty
@@ -299,7 +306,7 @@ fun CartScreen(
                                 Text("Save")
                             }
                             Button(
-                                onClick = { revealedItemId = null },
+                                onClick = { closeRevealedItemActions() },
                                 enabled = !isCartEmpty
                             ) {
                                 Text("Checkout")
@@ -366,8 +373,8 @@ fun CartScreen(
 private fun CartItemCard(
     item: CartItem,
     shape: Shape,
-    isDeleteRevealed: Boolean,
-    onDeleteRevealedChanged: (Boolean) -> Unit,
+    revealedAction: RevealedSwipeAction?,
+    onRevealedActionChanged: (RevealedSwipeAction?) -> Unit,
     onDelete: () -> Unit,
     onNote: () -> Unit,
     onIncrement: () -> Unit,
@@ -377,47 +384,30 @@ private fun CartItemCard(
     val noteActionWidth = 56.dp
     val deleteActionWidth = 56.dp
     val actionUnderlap = 10.dp
-    val notesDeleteOverlap = 0.dp
-    val swipeThresholdFraction = 0.35f
+    val swipeThresholdFraction = 0.42f
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val totalActionsWidth = noteActionWidth + deleteActionWidth - notesDeleteOverlap
-    val totalActionsWidthPx = with(density) { totalActionsWidth.toPx() }
-    val openOffsetX = -totalActionsWidthPx
-    val swipeThresholdPx = totalActionsWidthPx * swipeThresholdFraction
+    val noteRevealDistance = noteActionWidth + actionUnderlap
+    val deleteRevealDistance = deleteActionWidth + actionUnderlap
+    val noteOpenOffsetX = with(density) { -noteRevealDistance.toPx() }
+    val deleteOpenOffsetX = with(density) { deleteRevealDistance.toPx() }
+    val maxRevealDistancePx = maxOf(-noteOpenOffsetX, deleteOpenOffsetX)
+    val swipeThresholdPx = maxRevealDistancePx * swipeThresholdFraction
+    val switchThresholdPx = maxRevealDistancePx * 0.75f
     val velocityThresholdPx = with(density) { 120.dp.toPx() }
     val animationDurationMs = 220
     val coroutineScope = rememberCoroutineScope()
     var contentOffsetX by remember(item.productId) { mutableStateOf(0f) }
-    var itemWidthPx by remember(item.productId) { mutableFloatStateOf(0f) }
-    val fallbackSwipeDistancePx = with(density) { 220.dp.toPx() }
-    val maxHorizontalSwipePx = if (itemWidthPx > 0f) itemWidthPx else fallbackSwipeDistancePx
-    val deleteSwipeThresholdPx = maxHorizontalSwipePx * 0.8f
-    val isDeepDeleteSwipe = contentOffsetX < openOffsetX
-    val noteVisibilityProgress by animateFloatAsState(
-        targetValue = if (isDeepDeleteSwipe) 0f else 1f,
-        animationSpec = tween(durationMillis = 160),
-        label = "noteVisibilityProgress"
-    )
-    val deletingLabelVisibility by animateFloatAsState(
-        targetValue = if (isDeepDeleteSwipe) 1f else 0f,
-        animationSpec = tween(durationMillis = 160),
-        label = "deletingLabelVisibility"
-    )
-    val noteCardWidth = noteActionWidth + actionUnderlap
-    val deleteBaseWidth = deleteActionWidth + actionUnderlap
-    val trailingGapWidthDp = with(density) { (-contentOffsetX).coerceAtLeast(0f).toDp() }
-    val deleteCardWidth = if (isDeepDeleteSwipe) {
-        trailingGapWidthDp.coerceAtLeast(deleteBaseWidth)
-    } else {
-        deleteBaseWidth
-    }
 
     val draggableState = rememberDraggableState { delta ->
-        contentOffsetX = (contentOffsetX + delta).coerceIn(-maxHorizontalSwipePx, 0f)
+        contentOffsetX = (contentOffsetX + delta).coerceIn(noteOpenOffsetX, deleteOpenOffsetX)
     }
 
-    LaunchedEffect(isDeleteRevealed) {
-        contentOffsetX = if (isDeleteRevealed) openOffsetX else 0f
+    LaunchedEffect(revealedAction) {
+        contentOffsetX = when (revealedAction) {
+            RevealedSwipeAction.Notes -> noteOpenOffsetX
+            RevealedSwipeAction.Delete -> deleteOpenOffsetX
+            null -> 0f
+        }
     }
 
     var previousQuantity by remember(item.productId) { mutableIntStateOf(item.quantity) }
@@ -447,11 +437,21 @@ private fun CartItemCard(
         lineTotalText.length >= 11 -> 128.dp // e.g. $100,000.00
         else -> 100.dp
     }
-    val deleteShape = remember(shape) {
+    val noteActionShape = remember(shape) {
         if (shape is CornerBasedShape) {
             shape.copy(
                 topStart = CornerSize(0.dp),
                 bottomStart = CornerSize(0.dp)
+            )
+        } else {
+            shape
+        }
+    }
+    val deleteActionShape = remember(shape) {
+        if (shape is CornerBasedShape) {
+            shape.copy(
+                topEnd = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp)
             )
         } else {
             shape
@@ -465,18 +465,39 @@ private fun CartItemCard(
     ) {
         Card(
             modifier = Modifier
+                .align(Alignment.CenterStart)
+                .zIndex(0f)
+                .fillMaxHeight()
+                .width(deleteRevealDistance),
+            shape = deleteActionShape,
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = actionUnderlap),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Delete cart item",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .zIndex(1f)
-                .offset(x = -(deleteActionWidth - notesDeleteOverlap))
                 .fillMaxHeight()
-                .width(noteCardWidth)
-                .graphicsLayer {
-                    scaleX = noteVisibilityProgress.coerceAtLeast(0.001f)
-                    transformOrigin = TransformOrigin(0f, 0.5f)
-                    clip = true
-                }
-                .alpha(noteVisibilityProgress),
-            shape = deleteShape,
+                .width(noteRevealDistance),
+            shape = noteActionShape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -501,59 +522,8 @@ private fun CartItemCard(
 
         Card(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .zIndex(0f)
-                .fillMaxHeight()
-                .width(deleteCardWidth),
-            shape = deleteShape,
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = actionUnderlap),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .alpha(1f - deletingLabelVisibility)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete cart item",
-                        tint = Color.White
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = actionUnderlap + 8.dp)
-                        .alpha(deletingLabelVisibility),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Deleting cart item",
-                        tint = Color.White
-                    )
-                    Text(
-                        text = "Deleting...",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier
                 .zIndex(2f)
                 .offset { IntOffset(x = contentOffsetX.roundToInt(), y = 0) }
-                .onSizeChanged { itemWidthPx = it.width.toFloat() }
                 .draggable(
                     state = draggableState,
                     orientation = Orientation.Horizontal,
@@ -569,18 +539,28 @@ private fun CartItemCard(
                                 }
                             }
 
-                            val shouldDeleteBySwipe = contentOffsetX <= -deleteSwipeThresholdPx
-                            if (shouldDeleteBySwipe) {
-                                animateOffsetTo(-maxHorizontalSwipePx)
-                                onDeleteRevealedChanged(false)
-                                onDelete()
-                                return@launch
+                            val targetAction = when {
+                                revealedAction == RevealedSwipeAction.Notes -> when {
+                                    contentOffsetX <= -swipeThresholdPx -> RevealedSwipeAction.Notes
+                                    contentOffsetX >= switchThresholdPx -> RevealedSwipeAction.Delete
+                                    else -> null
+                                }
+                                revealedAction == RevealedSwipeAction.Delete -> when {
+                                    contentOffsetX >= swipeThresholdPx -> RevealedSwipeAction.Delete
+                                    contentOffsetX <= -switchThresholdPx -> RevealedSwipeAction.Notes
+                                    else -> null
+                                }
+                                contentOffsetX <= -swipeThresholdPx || velocity < -velocityThresholdPx -> RevealedSwipeAction.Notes
+                                contentOffsetX >= swipeThresholdPx || velocity > velocityThresholdPx -> RevealedSwipeAction.Delete
+                                else -> null
                             }
-
-                            val shouldRevealDelete = contentOffsetX <= -swipeThresholdPx || velocity < -velocityThresholdPx
-                            val targetOffset = if (shouldRevealDelete) openOffsetX else 0f
+                            val targetOffset = when (targetAction) {
+                                RevealedSwipeAction.Notes -> noteOpenOffsetX
+                                RevealedSwipeAction.Delete -> deleteOpenOffsetX
+                                null -> 0f
+                            }
                             animateOffsetTo(targetOffset)
-                            onDeleteRevealedChanged(shouldRevealDelete)
+                            onRevealedActionChanged(targetAction)
                         }
                     }
                 ),
@@ -726,6 +706,11 @@ private fun CartItemCard(
             }
         }
     }
+}
+
+private enum class RevealedSwipeAction {
+    Notes,
+    Delete
 }
 
 private fun formatUsd(amount: java.math.BigDecimal): String {
