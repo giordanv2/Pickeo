@@ -290,7 +290,10 @@ fun CartScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                         ) {
                             OutlinedButton(
-                                onClick = { revealedItemId = null },
+                                onClick = {
+                                    revealedItemId = null
+                                    onEvent(CartUiEvent.SaveClicked(notesByItemId))
+                                },
                                 enabled = !isCartEmpty
                             ) {
                                 Text("Save")

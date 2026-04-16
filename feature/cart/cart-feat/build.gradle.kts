@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(project(":feature:cart:cart-lib"))
+    implementation(project(":feature:orders:orders-lib"))
     implementation(project(":core:database"))
     implementation(project(":core:designsystem"))
     implementation(platform(libs.androidx.compose.bom))

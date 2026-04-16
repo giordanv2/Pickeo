@@ -25,6 +25,12 @@ interface OrdersDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrderItems(items: List<OrderItemEntity>)
 
+    @Transaction
+    suspend fun insertOrderWithItems(order: OrderEntity, items: List<OrderItemEntity>) {
+        insertOrders(listOf(order))
+        insertOrderItems(items)
+    }
+
     @Query("DELETE FROM order_items")
     suspend fun clearOrderItems()
 

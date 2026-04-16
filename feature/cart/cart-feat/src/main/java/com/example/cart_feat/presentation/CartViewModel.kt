@@ -1,17 +1,20 @@
 package com.example.cart_feat.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.cart_lib.models.CartSummary
 import com.example.cart_lib.usecase.ClearCartUseCase
 import com.example.cart_lib.usecase.ObserveCartUseCase
 import com.example.cart_lib.usecase.RemoveCartItemUseCase
 import com.example.cart_lib.usecase.UpdateCartItemQuantityUseCase
+import com.example.orders_lib.models.CreateOrderItem
+import com.example.orders_lib.models.CreateOrderRequest
+import com.example.orders_lib.usecase.CreateOrderUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +22,7 @@ sealed interface CartUiEvent {
     data class IncrementClicked(val productId: String) : CartUiEvent
     data class DecrementClicked(val productId: String) : CartUiEvent
     data class RemoveClicked(val productId: String) : CartUiEvent
+    data class SaveClicked(val notesByItemId: Map<String, String>) : CartUiEvent
     data object ClearClicked : CartUiEvent
 }
 
@@ -32,7 +36,8 @@ class CartViewModel @Inject constructor(
     private val observeCartUseCase: ObserveCartUseCase,
     private val updateCartItemQuantityUseCase: UpdateCartItemQuantityUseCase,
     private val removeCartItemUseCase: RemoveCartItemUseCase,
-    private val clearCartUseCase: ClearCartUseCase
+    private val clearCartUseCase: ClearCartUseCase,
+    private val createOrderUseCase: CreateOrderUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CartUiState())
@@ -55,6 +60,7 @@ class CartViewModel @Inject constructor(
             is CartUiEvent.RemoveClicked -> viewModelScope.launch {
                 removeCartItemUseCase(event.productId)
             }
+            is CartUiEvent.SaveClicked -> saveOrder(event.notesByItemId)
             CartUiEvent.ClearClicked -> viewModelScope.launch {
                 clearCartUseCase()
             }
@@ -73,5 +79,35 @@ class CartViewModel @Inject constructor(
         viewModelScope.launch {
             updateCartItemQuantityUseCase(productId, item.quantity - 1)
         }
+    }
+
+    private fun saveOrder(notesByItemId: Map<String, String>) {
+        val summary = uiState.value.summary
+        if (summary.items.isEmpty()) return
+
+        viewModelScope.launch {
+            createOrderUseCase(
+                CreateOrderRequest(
+                    items = summary.items.map { item ->
+                        CreateOrderItem(
+                            name = item.name,
+                            quantity = item.quantity,
+                            total = item.lineTotal
+                        )
+                    },
+                    notes = buildOrderNotes(summary, notesByItemId)
+                )
+            )
+            clearCartUseCase()
+        }
+    }
+
+    private fun buildOrderNotes(summary: CartSummary, notesByItemId: Map<String, String>): String {
+        return summary.items.mapNotNull { item ->
+            notesByItemId[item.productId]
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { note -> "${item.name}: $note" }
+        }.joinToString(separator = "\n")
     }
 }
