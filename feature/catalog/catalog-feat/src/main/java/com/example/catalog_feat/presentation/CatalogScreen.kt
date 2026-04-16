@@ -161,10 +161,9 @@ fun CatalogScreen(
             return@Scaffold
         }
 
-        Row(
-        ) {
+        Row {
             Column(
-                modifier = Modifier.padding(top = 12.dp, start = 16.dp),
+                modifier = Modifier.padding(top = 100.dp, start = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(

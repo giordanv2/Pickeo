@@ -14,7 +14,5 @@ abstract class OrdersDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindOrdersRepository(
-        dataSource: RoomOrdersDataSource
-    ): OrdersRepository
+    abstract fun bindOrdersRepository(dataSource: RoomOrdersDataSource): OrdersRepository
 }

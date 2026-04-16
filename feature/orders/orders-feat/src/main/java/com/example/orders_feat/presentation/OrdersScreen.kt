@@ -134,7 +134,7 @@ private fun OrdersListPane(
     Column(
         modifier = modifier.fillMaxHeight()
     ) {
-        OrdersHeader(orderCount = orders.size)
+        OrdersHeader(modifier = Modifier.padding(start = 64.dp),orderCount = orders.size)
         Spacer(Modifier.height(16.dp))
 
         LazyColumn(
@@ -162,7 +162,8 @@ private fun OrdersGridPane(
     Column(
         modifier = modifier.fillMaxHeight()
     ) {
-        OrdersHeader(orderCount = orders.size)
+        Spacer(Modifier.height(16.dp))
+        OrdersHeader(modifier = Modifier.padding(start = 72.dp), orderCount = orders.size)
         Spacer(Modifier.height(16.dp))
 
         LazyVerticalGrid(
@@ -183,13 +184,16 @@ private fun OrdersGridPane(
 }
 
 @Composable
-private fun OrdersHeader(orderCount: Int) {
+private fun OrdersHeader(modifier: Modifier, orderCount: Int) {
     Text(
+        modifier = modifier,
         text = "Orders",
         style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onBackground,
         fontWeight = FontWeight.SemiBold
     )
     Text(
+        modifier = modifier,
         text = "$orderCount created orders",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant

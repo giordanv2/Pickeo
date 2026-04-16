@@ -14,9 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +22,6 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -37,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -84,7 +82,7 @@ fun OrderEntryScreen() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun OrderEntryScreen(
     catalogContent: @Composable BoxScope.() -> Unit,
@@ -134,38 +132,21 @@ private fun OrderEntryScreen(
             }
         }
     ) {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text(selectedDestination.label) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Open navigation menu"
-                            )
-                        }
-                    }
-                )
-            }
-        ) { padding ->
+        Box(modifier = Modifier.fillMaxSize()) {
             when (selectedDestination) {
                 OrderEntryDestination.OrderEntry -> {
                     if (!showCartPane) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(padding)
                         ) {
                             catalogContent()
                         }
-                        return@Scaffold
+                        return@Box
                     }
 
                     Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Box(
                             modifier = Modifier
@@ -194,9 +175,7 @@ private fun OrderEntryScreen(
 
                 OrderEntryDestination.Catalog -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         catalogContent()
                     }
@@ -204,9 +183,7 @@ private fun OrderEntryScreen(
 
                 OrderEntryDestination.Cart -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         cartContent()
                     }
@@ -214,12 +191,23 @@ private fun OrderEntryScreen(
 
                 OrderEntryDestination.Orders -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         ordersContent()
                     }
+                }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(32.dp),
+            ) {
+                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open navigation menu"
+                    )
                 }
             }
         }
