@@ -8,6 +8,7 @@ data class CatalogItemEntity(
     @PrimaryKey val id: String,
     val name: String,
     val unitPrice: String,
+    val imageUrl: String?,
     val sectionId: String,
     val sectionTitle: String,
     val isAvailable: Boolean,

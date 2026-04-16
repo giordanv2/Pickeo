@@ -10,7 +10,8 @@ interface CatalogRoomDataSource {
     suspend fun createCatalogItem(
         name: String,
         unitPrice: BigDecimal,
-        sectionTitle: String
+        sectionTitle: String,
+        imageUrl: String? = null,
     )
 
     suspend fun reorderCatalogItems(itemIdsInOrder: List<String>)

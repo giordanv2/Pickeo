@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -418,6 +420,11 @@ private fun CatalogItemCard(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val context = LocalContext.current
+                val imageResId = item.imageUrl?.let { imageName ->
+                    context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                        .takeIf { it != 0 }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -426,11 +433,19 @@ private fun CatalogItemCard(
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = alpha)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = item.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = textAlpha)
-                    )
+                    if (imageResId != null) {
+                        Image(
+                            painter = painterResource(id = imageResId),
+                            contentDescription = item.name,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Text(
+                            text = item.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = textAlpha)
+                        )
+                    }
                 }
 
                 Text(

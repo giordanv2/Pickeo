@@ -12,7 +12,7 @@ import com.example.database.model.OrderItemEntity
 
 @Database(
     entities = [CartItemEntity::class, CatalogItemEntity::class, OrderEntity::class, OrderItemEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class CartDatabase : RoomDatabase() {

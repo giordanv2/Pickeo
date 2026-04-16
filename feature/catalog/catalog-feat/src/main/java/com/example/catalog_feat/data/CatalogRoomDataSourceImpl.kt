@@ -25,13 +25,15 @@ class CatalogRoomDataSourceImpl @Inject constructor(
     override suspend fun createCatalogItem(
         name: String,
         unitPrice: BigDecimal,
-        sectionTitle: String
+        sectionTitle: String,
+        imageUrl: String?
     ) {
         val nextSortOrder = catalogItemDao.nextSortOrder()
         val entity = CatalogItemEntity(
             id = UUID.randomUUID().toString(),
             name = name,
             unitPrice = unitPrice.toPlainString(),
+            imageUrl = imageUrl,
             sectionId = sectionTitle.toSectionId(),
             sectionTitle = sectionTitle,
             isAvailable = true,
@@ -65,6 +67,7 @@ private fun List<CatalogItemEntity>.toCatalog(): Catalog {
                         id = entity.id,
                         name = entity.name,
                         price = entity.unitPrice.toBigDecimal(),
+                        imageUrl = entity.imageUrl,
                         isAvailable = entity.isAvailable
                     )
                 }

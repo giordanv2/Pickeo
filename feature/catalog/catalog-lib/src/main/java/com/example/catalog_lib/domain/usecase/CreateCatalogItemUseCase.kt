@@ -10,12 +10,14 @@ class CreateCatalogItemUseCase @Inject constructor(
     suspend operator fun invoke(
         name: String,
         unitPrice: BigDecimal,
-        sectionTitle: String
+        sectionTitle: String,
+        imageUrl: String? = null,
     ) {
         repository.createCatalogItem(
             name = name,
             unitPrice = unitPrice,
-            sectionTitle = sectionTitle
+            sectionTitle = sectionTitle,
+            imageUrl = imageUrl
         )
     }
 }

@@ -184,10 +184,12 @@ class CatalogViewModel @Inject constructor(
             mockItemCounter += 1
             val counter = mockItemCounter
             val sectionTitle = _uiState.value.sections.firstOrNull()?.title ?: "Debug"
+            val isBurritoMock = counter == 1
             createCatalogItemUseCase(
-                name = "Mock item $counter",
+                name = if (isBurritoMock) "Burrito" else "Mock item $counter",
                 unitPrice = "${(counter % 7) + 1}.99".toBigDecimal(),
-                sectionTitle = sectionTitle
+                sectionTitle = sectionTitle,
+                imageUrl = if (isBurritoMock) "burrito_mock_img" else null
             )
         }
     }
