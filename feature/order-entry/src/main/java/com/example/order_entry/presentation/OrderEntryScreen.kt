@@ -57,8 +57,6 @@ import com.example.core.ui.PreviewDarkExpanded
 import com.example.core.ui.PreviewDarkExpandedPortrait
 import com.example.core.ui.PreviewDarkLandscape
 import com.example.orders_feat.presentation.OrdersRoute
-import com.example.orders_feat.presentation.OrdersScreen
-import com.example.orders_feat.presentation.OrdersUiState
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -75,9 +73,6 @@ fun OrderEntryScreen() {
         },
         cartContent = {
             CartRoute()
-        },
-        ordersContent = {
-            OrdersRoute()
         }
     )
 }
@@ -87,7 +82,6 @@ fun OrderEntryScreen() {
 private fun OrderEntryScreen(
     catalogContent: @Composable BoxScope.() -> Unit,
     cartContent: @Composable BoxScope.() -> Unit,
-    ordersContent: @Composable BoxScope.() -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val windowSizeClass = rememberWindowSizeClass()
@@ -97,7 +91,18 @@ private fun OrderEntryScreen(
     val showCartPane = !(
         windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact &&
             configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    )
+    val ordersContentWithNavigation: @Composable BoxScope.() -> Unit = {
+        OrdersRoute(
+            onOrderLoaded = {
+                selectedDestination = if (showCartPane) {
+                    OrderEntryDestination.OrderEntry
+                } else {
+                    OrderEntryDestination.Cart
+                }
+            }
         )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -193,7 +198,7 @@ private fun OrderEntryScreen(
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        ordersContent()
+                        ordersContentWithNavigation()
                     }
                 }
             }
@@ -297,16 +302,6 @@ private fun OrderEntryScreenPreview() {
                     onEvent = {}
                 )
             },
-            ordersContent = {
-                OrdersScreen(
-                    state = OrdersUiState(
-                        isLoading = false,
-                        orders = emptyList(),
-                        selectedOrderId = null
-                    ),
-                    onEvent = {}
-                )
-            }
         )
     }
 }

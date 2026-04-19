@@ -20,13 +20,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,9 +47,17 @@ import java.math.BigDecimal
 
 @Composable
 fun OrdersRoute(
+    onOrderLoaded: () -> Unit = {},
     viewModel: OrdersViewModel = hiltViewModel()
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    LaunchedEffect(viewModel, onOrderLoaded) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                OrdersNavigationEvent.OpenCart -> onOrderLoaded()
+            }
+        }
+    }
     OrdersScreen(
         state = state,
         onEvent = viewModel::onEvent
@@ -100,6 +112,8 @@ fun OrdersScreen(
 
                 OrderDetailsPane(
                     order = selectedOrder,
+                    isLoadingOrderIntoCart = state.isLoadingOrderIntoCart,
+                    onLoadOrderClicked = { onEvent(OrdersUiEvent.LoadSelectedOrderClicked) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -117,6 +131,8 @@ fun OrdersScreen(
 
                 OrderDetailsPane(
                     order = selectedOrder,
+                    isLoadingOrderIntoCart = state.isLoadingOrderIntoCart,
+                    onLoadOrderClicked = { onEvent(OrdersUiEvent.LoadSelectedOrderClicked) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -272,6 +288,8 @@ private fun OrderSummaryCard(
 @Composable
 private fun OrderDetailsPane(
     order: Order?,
+    isLoadingOrderIntoCart: Boolean,
+    onLoadOrderClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -295,65 +313,82 @@ private fun OrderDetailsPane(
             return@Card
         }
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp)
         ) {
-            Text(
-                text = "Order Details",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            DetailRow(label = "Order #", value = order.orderNumber)
-            DetailRow(label = "Created", value = order.createdAtLabel)
-            DetailRow(label = "Customer", value = order.customerName)
-            DetailRow(label = "Status", value = order.status)
-            DetailRow(label = "Total", value = formatCurrency(order.total))
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 72.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(
-                    text = "Items",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "Order Details",
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold
                 )
-                order.items.forEach { item ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+
+                DetailRow(label = "Order #", value = order.orderNumber)
+                DetailRow(label = "Created", value = order.createdAtLabel)
+                DetailRow(label = "Customer", value = order.customerName)
+                DetailRow(label = "Status", value = order.status)
+                DetailRow(label = "Total", value = formatCurrency(order.total))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Items",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    order.items.forEach { item ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${item.quantity}x ${item.name}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = formatCurrency(item.total),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                if (order.notes.isNotBlank()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "${item.quantity}x ${item.name}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            text = "Notes",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        Spacer(Modifier.width(12.dp))
                         Text(
-                            text = formatCurrency(item.total),
+                            text = order.notes,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            if (order.notes.isNotBlank()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "Notes",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = order.notes,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            Button(
+                onClick = onLoadOrderClicked,
+                enabled = !isLoadingOrderIntoCart,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                Text(if (isLoadingOrderIntoCart) "Loading..." else "Load Order")
             }
         }
     }

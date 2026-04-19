@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
+    implementation(project(":feature:cart:cart-lib"))
     implementation(project(":feature:orders:orders-lib"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

@@ -34,18 +34,4 @@ class OrderEntryViewModel @Inject constructor(
             }
         }
     }
-
-    fun onCatalogItemAdded(
-        productId: String,
-        name: String,
-        unitPrice: BigDecimal
-    ) {
-        viewModelScope.launch {
-            addItemToCartUseCase(
-                productId = productId,
-                name = name,
-                unitPrice = unitPrice
-            )
-        }
-    }
 }

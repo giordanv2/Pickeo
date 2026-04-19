@@ -150,7 +150,11 @@ fun CartScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Cart")
+                    Text(
+                        text = state.loadedOrderNumber?.let { orderNumber ->
+                            "Cart $orderNumber"
+                        } ?: "Cart"
+                    )
                 },
                 actions = {
                     IconButton(

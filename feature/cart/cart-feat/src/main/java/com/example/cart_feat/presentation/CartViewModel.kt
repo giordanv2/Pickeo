@@ -28,7 +28,8 @@ sealed interface CartUiEvent {
 
 data class CartUiState(
     val isLoading: Boolean = true,
-    val summary: CartSummary = CartSummary()
+    val summary: CartSummary = CartSummary(),
+    val loadedOrderNumber: String? = null
 )
 
 @HiltViewModel
@@ -47,7 +48,11 @@ class CartViewModel @Inject constructor(
         viewModelScope.launch {
             observeCartUseCase().collect { summary ->
                 _uiState.update {
-                    it.copy(isLoading = false, summary = summary)
+                    it.copy(
+                        isLoading = false,
+                        summary = summary,
+                        loadedOrderNumber = summary.loadedOrderNumber()
+                    )
                 }
             }
         }
@@ -109,5 +114,23 @@ class CartViewModel @Inject constructor(
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { note -> "${item.name}: $note" }
         }.joinToString(separator = "\n")
+    }
+
+    private fun CartSummary.loadedOrderNumber(): String? {
+        if (items.isEmpty()) return null
+
+        val orderNumbers = items.mapNotNull { item ->
+            item.productId
+                .takeIf { it.startsWith(LOADED_ORDER_PRODUCT_ID_PREFIX) }
+                ?.split(LOADED_ORDER_PRODUCT_ID_SEPARATOR)
+                ?.getOrNull(1)
+        }.distinct()
+
+        return orderNumbers.singleOrNull()
+    }
+
+    private companion object {
+        const val LOADED_ORDER_PRODUCT_ID_PREFIX = "loaded-order::"
+        const val LOADED_ORDER_PRODUCT_ID_SEPARATOR = "::"
     }
 }
