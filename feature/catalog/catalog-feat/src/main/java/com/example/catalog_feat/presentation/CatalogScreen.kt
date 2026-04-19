@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -415,10 +416,8 @@ private fun CatalogItemCard(
                 .clickable(enabled = item.isAvailable && !isEditMode, onClick = onAddClicked)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 val context = LocalContext.current
                 val imageResId = item.imageUrl?.let { imageName ->
@@ -428,8 +427,15 @@ private fun CatalogItemCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(84.dp)
-                        .clip(MaterialTheme.shapes.small)
+                        .height(100.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 12.dp,
+                                topEnd = 12.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp
+                            )
+                        )
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = alpha)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -437,6 +443,7 @@ private fun CatalogItemCard(
                         Image(
                             painter = painterResource(id = imageResId),
                             contentDescription = item.name,
+                            contentScale = ContentScale.FillWidth,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
@@ -448,24 +455,29 @@ private fun CatalogItemCard(
                     }
                 }
 
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "$${item.price.setScale(2, RoundingMode.HALF_UP)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = textAlpha)
-                )
-                if (!item.isAvailable) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        text = "Out of stock",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFB3261E)
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Text(
+                        text = "$${item.price.setScale(2, RoundingMode.HALF_UP)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = textAlpha)
+                    )
+                    if (!item.isAvailable) {
+                        Text(
+                            text = "Out of stock",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFFB3261E)
+                        )
+                    }
                 }
             }
         }
