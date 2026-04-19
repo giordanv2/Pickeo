@@ -27,7 +27,6 @@ class RoomOrdersDataSource @Inject constructor(
 ) : OrdersRepository {
 
     override fun observeOrders(): Flow<List<Order>> = flow {
-        seedIfEmpty()
         emitAll(
             ordersDao.observeOrders().map { orders ->
                 orders.map { it.toDataModel().toDomain() }
@@ -36,8 +35,6 @@ class RoomOrdersDataSource @Inject constructor(
     }
 
     override suspend fun createOrder(request: CreateOrderRequest) {
-        seedIfEmpty()
-
         val nextOrderNumber = 1001 + ordersDao.countOrders()
         val createdAtEpochMillis = System.currentTimeMillis()
         val orderId = "ord-$nextOrderNumber"
@@ -66,57 +63,4 @@ class RoomOrdersDataSource @Inject constructor(
             items = order.toItemEntities()
         )
     }
-
-    private suspend fun seedIfEmpty() {
-        if (ordersDao.countOrders() > 0) return
-        val sampleOrders = sampleOrders()
-        ordersDao.insertOrders(sampleOrders.map { it.toEntity() })
-        ordersDao.insertOrderItems(sampleOrders.flatMap { it.toItemEntities() })
-    }
 }
-
-private fun sampleOrders(): List<OrderDataModel> = listOf(
-    OrderDataModel(
-        id = "ord-1001",
-        orderNumber = "#1001",
-        createdAtLabel = "8:42 AM",
-        createdAtEpochMillis = 1_744_624_120_000,
-        total = BigDecimal("16.25").toPlainString(),
-        status = "Ready",
-        customerName = "Avery Johnson",
-        notes = "Extra hot latte and pack pastry separately.",
-        items = listOf(
-            OrderItemDataModel("1", "Espresso", 2, BigDecimal("5.00").toPlainString()),
-            OrderItemDataModel("2", "Butter Croissant", 1, BigDecimal("3.75").toPlainString()),
-            OrderItemDataModel("3", "Caffe Latte", 1, BigDecimal("7.50").toPlainString())
-        )
-    ),
-    OrderDataModel(
-        id = "ord-1002",
-        orderNumber = "#1002",
-        createdAtLabel = "9:05 AM",
-        createdAtEpochMillis = 1_744_625_500_000,
-        total = BigDecimal("11.50").toPlainString(),
-        status = "In Progress",
-        customerName = "Morgan Lee",
-        notes = "Customer will pick up at front counter.",
-        items = listOf(
-            OrderItemDataModel("4", "Americano", 1, BigDecimal("3.00").toPlainString()),
-            OrderItemDataModel("5", "Blueberry Muffin", 1, BigDecimal("3.50").toPlainString()),
-            OrderItemDataModel("6", "Caffe Latte", 1, BigDecimal("5.00").toPlainString())
-        )
-    ),
-    OrderDataModel(
-        id = "ord-1003",
-        orderNumber = "#1003",
-        createdAtLabel = "9:18 AM",
-        createdAtEpochMillis = 1_744_626_280_000,
-        total = BigDecimal("8.75").toPlainString(),
-        status = "Completed",
-        customerName = "Jordan Smith",
-        items = listOf(
-            OrderItemDataModel("7", "Americano", 1, BigDecimal("3.00").toPlainString()),
-            OrderItemDataModel("8", "Butter Croissant", 1, BigDecimal("5.75").toPlainString())
-        )
-    )
-)
