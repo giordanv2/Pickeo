@@ -2,6 +2,7 @@ package com.example.order_entry.presentation
 
 import android.app.Activity
 import android.content.res.Configuration
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpSize
@@ -106,6 +108,7 @@ private fun OrderEntryScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(240.dp)
@@ -201,6 +204,22 @@ private fun OrderEntryScreen(
                         ordersContentWithNavigation()
                     }
                 }
+            }
+
+            if (!drawerState.isOpen) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxHeight()
+                        .width(240.dp)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures { _, dragAmount ->
+                                if (dragAmount > 12f) {
+                                    scope.launch { drawerState.open() }
+                                }
+                            }
+                        }
+                )
             }
 
             Surface(
