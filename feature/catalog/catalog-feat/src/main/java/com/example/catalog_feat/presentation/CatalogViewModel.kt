@@ -188,6 +188,7 @@ class CatalogViewModel @Inject constructor(
                 1 -> "California Burrito" to "burrito_mock_img"
                 2 -> "Pizza" to "pizza_mock_img"
                 3 -> "Burger" to "burger_mock_img"
+                4 -> "California Burrito 2" to "burrito_2_mock_img"
                 else -> "Mock item $counter" to null
             }
             createCatalogItemUseCase(
